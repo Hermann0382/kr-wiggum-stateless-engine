@@ -2,25 +2,34 @@
  * Tests for telemetry schema (ENT-009)
  */
 import { describe, it, expect } from 'vitest';
-import { TelemetryStateSchema, type TelemetryState } from '../../src/schemas/telemetry.schema.js';
+import {
+  TelemetrySchema,
+  ContextZoneSchema,
+  GuardrailStatusSchema,
+  type Telemetry,
+} from '../../src/schemas/telemetry.schema.js';
 
-describe('TelemetryStateSchema', () => {
+describe('TelemetrySchema', () => {
+  const now = new Date().toISOString();
+
   it('should validate a valid telemetry state', () => {
-    const validTelemetry: TelemetryState = {
+    const validTelemetry: Telemetry = {
+      id: crypto.randomUUID(),
+      project_id: crypto.randomUUID(),
+      session_id: crypto.randomUUID(),
       agent_type: 'manager',
-      agent_id: 'mgr-001',
-      session_id: 'session-abc123',
       zone: 'smart',
       context_fill_percent: 25,
-      timestamp: new Date().toISOString(),
       guardrail_status: 'all_passing',
-      current_task_id: 'TASK-001',
-      tasks_completed_this_session: 3,
-      errors_this_session: 0,
-      estimated_context_remaining: 75000,
+      current_task_id: 'ST-001',
+      tokens_used: 50000,
+      tokens_remaining: 150000,
+      heartbeat_at: now,
+      created_at: now,
+      updated_at: now,
     };
 
-    const result = TelemetryStateSchema.safeParse(validTelemetry);
+    const result = TelemetrySchema.safeParse(validTelemetry);
     expect(result.success).toBe(true);
   });
 
@@ -28,115 +37,88 @@ describe('TelemetryStateSchema', () => {
     const zones = ['smart', 'degrading', 'dumb'] as const;
 
     for (const zone of zones) {
-      const telemetry = {
-        agent_type: 'worker',
-        agent_id: 'wkr-001',
-        session_id: 'session-abc123',
-        zone,
-        context_fill_percent: 50,
-        timestamp: new Date().toISOString(),
-        guardrail_status: 'all_passing',
-        tasks_completed_this_session: 0,
-        errors_this_session: 0,
-        estimated_context_remaining: 50000,
-      };
-
-      const result = TelemetryStateSchema.safeParse(telemetry);
+      const result = ContextZoneSchema.safeParse(zone);
       expect(result.success).toBe(true);
     }
   });
 
   it('should reject invalid zone', () => {
-    const invalidTelemetry = {
-      agent_type: 'manager',
-      agent_id: 'mgr-001',
-      session_id: 'session-abc123',
-      zone: 'invalid-zone',
-      context_fill_percent: 25,
-      timestamp: new Date().toISOString(),
-      guardrail_status: 'all_passing',
-      tasks_completed_this_session: 0,
-      errors_this_session: 0,
-      estimated_context_remaining: 75000,
-    };
-
-    const result = TelemetryStateSchema.safeParse(invalidTelemetry);
+    const result = ContextZoneSchema.safeParse('invalid-zone');
     expect(result.success).toBe(false);
   });
 
   it('should reject context_fill_percent over 100', () => {
     const invalidTelemetry = {
+      id: crypto.randomUUID(),
+      project_id: crypto.randomUUID(),
+      session_id: crypto.randomUUID(),
       agent_type: 'manager',
-      agent_id: 'mgr-001',
-      session_id: 'session-abc123',
       zone: 'smart',
       context_fill_percent: 150,
-      timestamp: new Date().toISOString(),
       guardrail_status: 'all_passing',
-      tasks_completed_this_session: 0,
-      errors_this_session: 0,
-      estimated_context_remaining: 0,
+      tokens_used: 50000,
+      tokens_remaining: 0,
+      heartbeat_at: now,
+      created_at: now,
+      updated_at: now,
     };
 
-    const result = TelemetryStateSchema.safeParse(invalidTelemetry);
+    const result = TelemetrySchema.safeParse(invalidTelemetry);
     expect(result.success).toBe(false);
   });
 
   it('should reject negative context_fill_percent', () => {
     const invalidTelemetry = {
+      id: crypto.randomUUID(),
+      project_id: crypto.randomUUID(),
+      session_id: crypto.randomUUID(),
       agent_type: 'manager',
-      agent_id: 'mgr-001',
-      session_id: 'session-abc123',
       zone: 'smart',
       context_fill_percent: -10,
-      timestamp: new Date().toISOString(),
       guardrail_status: 'all_passing',
-      tasks_completed_this_session: 0,
-      errors_this_session: 0,
-      estimated_context_remaining: 100000,
+      tokens_used: 0,
+      tokens_remaining: 200000,
+      heartbeat_at: now,
+      created_at: now,
+      updated_at: now,
     };
 
-    const result = TelemetryStateSchema.safeParse(invalidTelemetry);
+    const result = TelemetrySchema.safeParse(invalidTelemetry);
     expect(result.success).toBe(false);
   });
 
   it('should validate all guardrail status types', () => {
-    const statuses = ['all_passing', 'some_failing', 'blocked'] as const;
+    const statuses = [
+      'all_passing',
+      'tests_failing',
+      'compiler_failing',
+      'lint_failing',
+      'multiple_failing',
+    ] as const;
 
-    for (const guardrail_status of statuses) {
-      const telemetry = {
-        agent_type: 'worker',
-        agent_id: 'wkr-001',
-        session_id: 'session-abc123',
-        zone: 'smart',
-        context_fill_percent: 30,
-        timestamp: new Date().toISOString(),
-        guardrail_status,
-        tasks_completed_this_session: 0,
-        errors_this_session: 0,
-        estimated_context_remaining: 70000,
-      };
-
-      const result = TelemetryStateSchema.safeParse(telemetry);
+    for (const status of statuses) {
+      const result = GuardrailStatusSchema.safeParse(status);
       expect(result.success).toBe(true);
     }
   });
 
   it('should allow optional current_task_id', () => {
     const telemetryWithoutTask = {
+      id: crypto.randomUUID(),
+      project_id: crypto.randomUUID(),
+      session_id: crypto.randomUUID(),
       agent_type: 'manager',
-      agent_id: 'mgr-001',
-      session_id: 'session-abc123',
       zone: 'smart',
       context_fill_percent: 25,
-      timestamp: new Date().toISOString(),
       guardrail_status: 'all_passing',
-      tasks_completed_this_session: 0,
-      errors_this_session: 0,
-      estimated_context_remaining: 75000,
+      tokens_used: 50000,
+      tokens_remaining: 150000,
+      heartbeat_at: now,
+      created_at: now,
+      updated_at: now,
     };
 
-    const result = TelemetryStateSchema.safeParse(telemetryWithoutTask);
+    const result = TelemetrySchema.safeParse(telemetryWithoutTask);
     expect(result.success).toBe(true);
   });
 });

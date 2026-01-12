@@ -1,13 +1,13 @@
 /**
  * Tests for FileStateManager base class
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdir, rm, writeFile, readFile } from 'node:fs/promises';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { mkdir, rm, writeFile, readFile, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { z } from 'zod';
 
-import { FileStateManager } from '../../src/state/file-state-manager.js';
+import { FileStateManager, type FileStateOptions } from '../../src/state/file-state-manager.js';
 
 // Test schema
 const TestSchema = z.object({
@@ -21,17 +21,37 @@ type TestState = z.infer<typeof TestSchema>;
 
 // Concrete implementation for testing
 class TestStateManager extends FileStateManager<TestState> {
-  constructor(basePath: string) {
-    super(basePath, 'test-state.json', TestSchema);
+  private readonly filename: string;
+
+  constructor(options: FileStateOptions, filename = 'test-state.json') {
+    super(options);
+    this.filename = filename;
   }
 
-  getDefaultState(): TestState {
+  protected getSchema(): z.ZodSchema<TestState> {
+    return TestSchema;
+  }
+
+  protected getFilePath(): string {
+    return join(this.basePath, this.filename);
+  }
+
+  protected getDefaultState(): TestState {
     return {
       id: 'default',
       name: 'Default State',
       count: 0,
       active: false,
     };
+  }
+
+  // Expose for testing
+  async deleteFile(): Promise<void> {
+    try {
+      await unlink(this.getFilePath());
+    } catch {
+      // Ignore if file doesn't exist
+    }
   }
 }
 
@@ -43,7 +63,7 @@ describe('FileStateManager', () => {
     // Create temp directory
     testDir = join(tmpdir(), `kr-wiggum-test-${Date.now()}`);
     await mkdir(testDir, { recursive: true });
-    manager = new TestStateManager(testDir);
+    manager = new TestStateManager({ basePath: testDir });
   });
 
   afterEach(async () => {
@@ -79,13 +99,15 @@ describe('FileStateManager', () => {
       expect(state).toEqual(existingState);
     });
 
-    it('should throw on invalid JSON', async () => {
+    it('should throw on invalid JSON when createIfMissing is false', async () => {
+      const strictManager = new TestStateManager({ basePath: testDir, createIfMissing: false });
       await writeFile(join(testDir, 'test-state.json'), 'not valid json');
 
-      await expect(manager.read()).rejects.toThrow();
+      await expect(strictManager.read()).rejects.toThrow();
     });
 
-    it('should throw on schema validation failure', async () => {
+    it('should throw on schema validation failure when createIfMissing is false', async () => {
+      const strictManager = new TestStateManager({ basePath: testDir, createIfMissing: false });
       const invalidState = {
         id: 'test',
         name: 'Test',
@@ -98,7 +120,21 @@ describe('FileStateManager', () => {
         JSON.stringify(invalidState, null, 2)
       );
 
-      await expect(manager.read()).rejects.toThrow();
+      await expect(strictManager.read()).rejects.toThrow();
+    });
+
+    it('should return default state on invalid data when createIfMissing is true', async () => {
+      // Manager with createIfMissing: true (default)
+      await writeFile(join(testDir, 'test-state.json'), 'not valid json');
+
+      // Should fallback to default state instead of throwing
+      const state = await manager.read();
+      expect(state).toEqual({
+        id: 'default',
+        name: 'Default State',
+        count: 0,
+        active: false,
+      });
     });
   });
 
@@ -131,7 +167,7 @@ describe('FileStateManager', () => {
 
     it('should create directory if it does not exist', async () => {
       const nestedDir = join(testDir, 'nested', 'dir');
-      const nestedManager = new TestStateManager(nestedDir);
+      const nestedManager = new TestStateManager({ basePath: nestedDir });
 
       const state: TestState = {
         id: 'nested',
@@ -196,7 +232,7 @@ describe('FileStateManager', () => {
     });
   });
 
-  describe('delete', () => {
+  describe('delete (via deleteFile helper)', () => {
     it('should delete existing file', async () => {
       await manager.write({
         id: 'test',
@@ -207,13 +243,13 @@ describe('FileStateManager', () => {
 
       expect(await manager.exists()).toBe(true);
 
-      await manager.delete();
+      await manager.deleteFile();
 
       expect(await manager.exists()).toBe(false);
     });
 
     it('should not throw when deleting non-existent file', async () => {
-      await expect(manager.delete()).resolves.not.toThrow();
+      await expect(manager.deleteFile()).resolves.not.toThrow();
     });
   });
 });

@@ -1,13 +1,12 @@
 /**
  * Tests for TelemetryManager
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { createTelemetryManager, TelemetryManager } from '../../src/state/telemetry-manager.js';
-import type { TelemetryState } from '../../src/schemas/telemetry.schema.js';
 
 describe('TelemetryManager', () => {
   let testDir: string;
@@ -16,6 +15,7 @@ describe('TelemetryManager', () => {
   beforeEach(async () => {
     testDir = join(tmpdir(), `kr-wiggum-telemetry-test-${Date.now()}`);
     await mkdir(testDir, { recursive: true });
+    await mkdir(join(testDir, '.ralph'), { recursive: true });
     manager = createTelemetryManager(testDir);
   });
 
@@ -31,166 +31,195 @@ describe('TelemetryManager', () => {
       expect(state.zone).toBe('smart');
       expect(state.context_fill_percent).toBe(0);
       expect(state.guardrail_status).toBe('all_passing');
-      expect(state.tasks_completed_this_session).toBe(0);
-      expect(state.errors_this_session).toBe(0);
+      expect(state.tokens_used).toBe(0);
     });
   });
 
-  describe('updateContextFill', () => {
-    it('should update context fill percentage', async () => {
-      await manager.updateContextFill(35);
+  describe('startSession', () => {
+    it('should start a new session with given project ID and agent type', async () => {
+      const projectId = crypto.randomUUID();
+      const state = await manager.startSession({
+        projectId,
+        agentType: 'worker',
+      });
 
-      const state = await manager.read();
-      expect(state.context_fill_percent).toBe(35);
+      expect(state.project_id).toBe(projectId);
+      expect(state.agent_type).toBe('worker');
+      expect(state.context_fill_percent).toBe(0);
+      expect(state.zone).toBe('smart');
+    });
+  });
+
+  describe('heartbeat', () => {
+    it('should update token count and calculate fill percentage', async () => {
+      // With default 200K context window, 40K tokens = 20%
+      const state = await manager.heartbeat(40000);
+
+      expect(state.tokens_used).toBe(40000);
+      expect(state.context_fill_percent).toBe(20);
+      expect(state.zone).toBe('smart');
     });
 
     it('should auto-detect smart zone (0-40%)', async () => {
-      await manager.updateContextFill(25);
+      await manager.heartbeat(50000); // 25% of 200K
 
       const state = await manager.read();
       expect(state.zone).toBe('smart');
     });
 
     it('should auto-detect degrading zone (40-60%)', async () => {
-      await manager.updateContextFill(50);
+      await manager.heartbeat(100000); // 50% of 200K
 
       const state = await manager.read();
       expect(state.zone).toBe('degrading');
     });
 
     it('should auto-detect dumb zone (60%+)', async () => {
-      await manager.updateContextFill(75);
+      await manager.heartbeat(150000); // 75% of 200K
 
       const state = await manager.read();
       expect(state.zone).toBe('dumb');
     });
 
-    it('should clamp percentage to 0-100 range', async () => {
-      await manager.updateContextFill(150);
+    it('should set current task ID when provided', async () => {
+      await manager.heartbeat(10000, 'ST-001');
 
       const state = await manager.read();
-      expect(state.context_fill_percent).toBe(100);
+      expect(state.current_task_id).toBe('ST-001');
     });
   });
 
   describe('setCurrentTask', () => {
     it('should set current task ID', async () => {
-      await manager.setCurrentTask('TASK-001');
+      await manager.setCurrentTask('ST-001');
 
       const state = await manager.read();
-      expect(state.current_task_id).toBe('TASK-001');
+      expect(state.current_task_id).toBe('ST-001');
     });
 
-    it('should clear current task when null', async () => {
-      await manager.setCurrentTask('TASK-001');
-      await manager.setCurrentTask(null);
+    it('should clear current task when undefined', async () => {
+      await manager.setCurrentTask('ST-001');
+      await manager.setCurrentTask(undefined);
 
       const state = await manager.read();
       expect(state.current_task_id).toBeUndefined();
     });
   });
 
-  describe('incrementTasksCompleted', () => {
-    it('should increment completed task count', async () => {
-      await manager.incrementTasksCompleted();
-      await manager.incrementTasksCompleted();
-
-      const state = await manager.read();
-      expect(state.tasks_completed_this_session).toBe(2);
-    });
-  });
-
-  describe('incrementErrors', () => {
-    it('should increment error count', async () => {
-      await manager.incrementErrors();
-
-      const state = await manager.read();
-      expect(state.errors_this_session).toBe(1);
-    });
-  });
-
-  describe('setGuardrailStatus', () => {
+  describe('updateGuardrailStatus', () => {
     it('should update guardrail status', async () => {
-      await manager.setGuardrailStatus('some_failing');
+      await manager.updateGuardrailStatus('tests_failing');
 
       const state = await manager.read();
-      expect(state.guardrail_status).toBe('some_failing');
+      expect(state.guardrail_status).toBe('tests_failing');
     });
 
     it('should accept all valid guardrail statuses', async () => {
-      const statuses = ['all_passing', 'some_failing', 'blocked'] as const;
+      const statuses = [
+        'all_passing',
+        'tests_failing',
+        'compiler_failing',
+        'lint_failing',
+        'multiple_failing',
+      ] as const;
 
       for (const status of statuses) {
-        await manager.setGuardrailStatus(status);
+        await manager.updateGuardrailStatus(status);
         const state = await manager.read();
         expect(state.guardrail_status).toBe(status);
       }
     });
   });
 
-  describe('getZone', () => {
-    it('should return current zone', async () => {
-      await manager.updateContextFill(25);
+  describe('calculateZone', () => {
+    it('should return smart zone for 0-39%', () => {
+      expect(manager.calculateZone(0)).toBe('smart');
+      expect(manager.calculateZone(20)).toBe('smart');
+      expect(manager.calculateZone(39)).toBe('smart');
+    });
 
-      const zone = await manager.getZone();
-      expect(zone).toBe('smart');
+    it('should return degrading zone for 40-59%', () => {
+      expect(manager.calculateZone(40)).toBe('degrading');
+      expect(manager.calculateZone(50)).toBe('degrading');
+      expect(manager.calculateZone(59)).toBe('degrading');
+    });
+
+    it('should return dumb zone for 60%+', () => {
+      expect(manager.calculateZone(60)).toBe('dumb');
+      expect(manager.calculateZone(80)).toBe('dumb');
+      expect(manager.calculateZone(100)).toBe('dumb');
     });
   });
 
-  describe('isInDumbZone', () => {
-    it('should return false in smart zone', async () => {
-      await manager.updateContextFill(30);
+  describe('needsRotation', () => {
+    it('should not rotate in smart zone for manager', async () => {
+      await manager.startSession({ projectId: crypto.randomUUID(), agentType: 'manager' });
+      await manager.heartbeat(50000); // 25%
 
-      const isDumb = await manager.isInDumbZone();
-      expect(isDumb).toBe(false);
-    });
-
-    it('should return false in degrading zone', async () => {
-      await manager.updateContextFill(50);
-
-      const isDumb = await manager.isInDumbZone();
-      expect(isDumb).toBe(false);
-    });
-
-    it('should return true in dumb zone', async () => {
-      await manager.updateContextFill(70);
-
-      const isDumb = await manager.isInDumbZone();
-      expect(isDumb).toBe(true);
-    });
-  });
-
-  describe('shouldRotate', () => {
-    it('should not rotate in smart zone', async () => {
-      await manager.updateContextFill(30);
-
-      const shouldRotate = await manager.shouldRotate();
+      const shouldRotate = await manager.needsRotation();
       expect(shouldRotate).toBe(false);
     });
 
-    it('should rotate in dumb zone', async () => {
-      await manager.updateContextFill(70);
+    it('should rotate in dumb zone for manager', async () => {
+      await manager.startSession({ projectId: crypto.randomUUID(), agentType: 'manager' });
+      await manager.heartbeat(140000); // 70%
 
-      const shouldRotate = await manager.shouldRotate();
+      const shouldRotate = await manager.needsRotation();
       expect(shouldRotate).toBe(true);
+    });
+
+    it('should not trigger rotation for worker', async () => {
+      await manager.startSession({ projectId: crypto.randomUUID(), agentType: 'worker' });
+      await manager.heartbeat(140000); // 70%
+
+      const shouldRotate = await manager.needsRotation();
+      expect(shouldRotate).toBe(false);
     });
   });
 
-  describe('resetSession', () => {
-    it('should reset session counters', async () => {
-      await manager.incrementTasksCompleted();
-      await manager.incrementTasksCompleted();
-      await manager.incrementErrors();
-      await manager.setCurrentTask('TASK-001');
+  describe('shouldSelfDestruct', () => {
+    it('should not self-destruct when worker context is low', async () => {
+      await manager.startSession({ projectId: crypto.randomUUID(), agentType: 'worker' });
+      await manager.heartbeat(50000); // 25%
 
-      await manager.resetSession();
+      const should = await manager.shouldSelfDestruct();
+      expect(should).toBe(false);
+    });
+
+    it('should self-destruct when worker context exceeds threshold', async () => {
+      await manager.startSession({ projectId: crypto.randomUUID(), agentType: 'worker' });
+      await manager.heartbeat(100000); // 50%
+
+      const should = await manager.shouldSelfDestruct();
+      expect(should).toBe(true);
+    });
+  });
+
+  describe('resetForWorker', () => {
+    it('should reset telemetry for new worker', async () => {
+      const projectId = crypto.randomUUID();
+      await manager.startSession({ projectId, agentType: 'manager' });
+      await manager.heartbeat(100000);
+      await manager.updateGuardrailStatus('tests_failing');
+
+      await manager.resetForWorker(projectId);
 
       const state = await manager.read();
-      expect(state.tasks_completed_this_session).toBe(0);
-      expect(state.errors_this_session).toBe(0);
-      expect(state.current_task_id).toBeUndefined();
+      expect(state.agent_type).toBe('worker');
       expect(state.context_fill_percent).toBe(0);
       expect(state.zone).toBe('smart');
+      expect(state.guardrail_status).toBe('all_passing');
+      expect(state.project_id).toBe(projectId);
+    });
+  });
+
+  describe('getContextConfig', () => {
+    it('should return context window configuration', () => {
+      const config = manager.getContextConfig();
+
+      expect(config.totalTokens).toBe(200000);
+      expect(config.smartZoneMax).toBe(40);
+      expect(config.degradingZoneMax).toBe(60);
     });
   });
 });
