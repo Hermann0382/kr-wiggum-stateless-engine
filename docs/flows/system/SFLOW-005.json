@@ -1,0 +1,182 @@
+{
+  "id": "SFLOW-005",
+  "name": "Dashboard Data Flow",
+  "description": "Real-time data pipeline from file changes through WebSocket to browser UI updates.",
+  "components": ["filesystem", "watcher", "socket_io", "express", "browser", "dashboard_ui"],
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Agent writes to telemetry.json",
+      "component": "filesystem",
+      "inputs": ["context_percent", "status"],
+      "outputs": [".ralph/telemetry.json"],
+      "data_flow": ["filesystem_write"],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "fs.watch detects file change event",
+      "component": "watcher",
+      "inputs": ["file_change_event"],
+      "outputs": ["change_notification"],
+      "data_flow": ["inotify_event"],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Watcher reads and parses telemetry.json",
+      "component": "watcher",
+      "inputs": [".ralph/telemetry.json"],
+      "outputs": ["telemetry_object"],
+      "data_flow": ["filesystem_read", "json_parse"],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Socket.io emits 'telemetry' event to all clients",
+      "component": "socket_io",
+      "inputs": ["telemetry_object"],
+      "outputs": ["broadcast_event"],
+      "data_flow": ["websocket_emit"],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Browser receives 'telemetry' event",
+      "component": "browser",
+      "inputs": ["websocket_message"],
+      "outputs": ["telemetry_data"],
+      "data_flow": ["websocket_receive"],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Dashboard updates context progress bars",
+      "component": "dashboard_ui",
+      "inputs": ["telemetry_data"],
+      "outputs": ["dom_update"],
+      "data_flow": ["javascript_render"],
+      "next_steps": []
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Agent marks task complete in IMPLEMENTATION_PLAN.md",
+      "component": "filesystem",
+      "inputs": ["task_completion"],
+      "outputs": ["IMPLEMENTATION_PLAN.md"],
+      "data_flow": ["filesystem_write"],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "fs.watchFile detects roadmap change",
+      "component": "watcher",
+      "inputs": ["file_stat_change"],
+      "outputs": ["roadmap_notification"],
+      "data_flow": ["polling_detect"],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Watcher counts [x] vs [ ] checkboxes",
+      "component": "watcher",
+      "inputs": ["IMPLEMENTATION_PLAN.md"],
+      "outputs": ["completed_count", "total_count"],
+      "data_flow": ["filesystem_read", "regex_count"],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Socket.io emits 'roadmap' event with progress",
+      "component": "socket_io",
+      "inputs": ["progress_data"],
+      "outputs": ["broadcast_event"],
+      "data_flow": ["websocket_emit"],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Browser receives 'roadmap' event",
+      "component": "browser",
+      "inputs": ["websocket_message"],
+      "outputs": ["progress_data"],
+      "data_flow": ["websocket_receive"],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "Dashboard updates progress visualization",
+      "component": "dashboard_ui",
+      "inputs": ["progress_data"],
+      "outputs": ["dom_update"],
+      "data_flow": ["javascript_render"],
+      "next_steps": []
+    }
+  ],
+  "data_flow": [
+    {
+      "source": "agent_process",
+      "target": "filesystem",
+      "data": "telemetry JSON",
+      "protocol": "filesystem_write"
+    },
+    {
+      "source": "filesystem",
+      "target": "watcher",
+      "data": "change event",
+      "protocol": "fs.watch"
+    },
+    {
+      "source": "watcher",
+      "target": "socket_io",
+      "data": "parsed data",
+      "protocol": "function_call"
+    },
+    {
+      "source": "socket_io",
+      "target": "browser",
+      "data": "event payload",
+      "protocol": "websocket"
+    },
+    {
+      "source": "browser",
+      "target": "dashboard_ui",
+      "data": "state update",
+      "protocol": "javascript"
+    }
+  ],
+  "error_handling": [
+    {
+      "component": "watcher",
+      "error": "partial_json_write",
+      "recovery": "wait 50ms and retry parse"
+    },
+    {
+      "component": "watcher",
+      "error": "file_watcher_fail",
+      "recovery": "re-initialize watcher"
+    },
+    {
+      "component": "socket_io",
+      "error": "client_disconnect",
+      "recovery": "clean up client state"
+    },
+    {
+      "component": "browser",
+      "error": "connection_lost",
+      "recovery": "auto-reconnect with backoff"
+    }
+  ]
+}

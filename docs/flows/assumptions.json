@@ -1,0 +1,169 @@
+{
+  "artifact_type": "assumptions",
+  "version": "2026.1.0",
+  "created_at": "2026-01-11T23:00:00Z",
+  "assumptions": [
+    {
+      "id": "ASM-001",
+      "category": "environment",
+      "assumption": "Claude Code CLI is pre-authenticated and ready for headless execution",
+      "rationale": "Workers and Managers spawn as separate Claude Code processes without interactive login",
+      "impact_if_false": "Pipeline cannot start; requires manual authentication setup",
+      "validation_method": "Run 'claude-code --version' and verify response",
+      "flows_affected": ["FLOW-002", "FLOW-006", "SFLOW-001"]
+    },
+    {
+      "id": "ASM-002",
+      "category": "environment",
+      "assumption": "Users have bash-compatible shell environment (macOS/Linux)",
+      "rationale": "orchestrate.sh and process management rely on bash syntax and commands",
+      "impact_if_false": "Windows users require WSL or alternative orchestration",
+      "validation_method": "Check $SHELL variable or run 'bash --version'",
+      "flows_affected": ["FLOW-009", "FLOW-010", "FLOW-014", "SFLOW-001"]
+    },
+    {
+      "id": "ASM-003",
+      "category": "environment",
+      "assumption": "Node.js 18+ LTS and npm are installed on the development machine",
+      "rationale": "Watcher service requires modern Node.js features and npm for dependencies",
+      "impact_if_false": "Dashboard and WebSocket bridge will not function",
+      "validation_method": "Run 'node --version' and verify >= 18.0.0",
+      "flows_affected": ["FLOW-012", "FLOW-013", "SFLOW-005"]
+    },
+    {
+      "id": "ASM-004",
+      "category": "environment",
+      "assumption": "Git repository is initialized with proper .gitignore",
+      "rationale": "Crisis Mode relies on git reset; file tracking essential for ADR",
+      "impact_if_false": "Crisis revert may fail; sensitive files may be committed",
+      "validation_method": "Check for .git directory and .gitignore file",
+      "flows_affected": ["FLOW-014", "SFLOW-006"]
+    },
+    {
+      "id": "ASM-005",
+      "category": "ai_model",
+      "assumption": "Context window size is approximately 200,000 tokens",
+      "rationale": "60% threshold calculations based on 200K context window",
+      "impact_if_false": "Rotation thresholds need recalibration for different models",
+      "validation_method": "Check Claude model documentation for context limits",
+      "flows_affected": ["FLOW-002", "FLOW-005", "SFLOW-001"]
+    },
+    {
+      "id": "ASM-006",
+      "category": "connectivity",
+      "assumption": "Internet connectivity available for AI API calls",
+      "rationale": "Claude Code requires API access for AI reasoning",
+      "impact_if_false": "Pipeline halts; no offline mode available",
+      "validation_method": "Ping anthropic.com or run test API call",
+      "flows_affected": ["ALL"]
+    },
+    {
+      "id": "ASM-007",
+      "category": "project_structure",
+      "assumption": "KreativReason documentation guides are available in /docs folder",
+      "rationale": "Distiller references guides for task breakdown; Workers need pattern guidance",
+      "impact_if_false": "Task breakdown may be suboptimal; Workers lack context",
+      "validation_method": "Verify existence of /docs directory with guide files",
+      "flows_affected": ["FLOW-001", "SFLOW-002"]
+    },
+    {
+      "id": "ASM-008",
+      "category": "architecture",
+      "assumption": "Workers must be stateless - no memory retention between tasks",
+      "rationale": "Core architectural principle; prevents context rot and cognitive debt",
+      "impact_if_false": "System loses primary value proposition; context rot occurs",
+      "validation_method": "Verify Worker processes fully terminate between tasks",
+      "flows_affected": ["FLOW-006", "FLOW-007", "SFLOW-003"]
+    },
+    {
+      "id": "ASM-009",
+      "category": "architecture",
+      "assumption": "Manager must rotate at 60% context threshold",
+      "rationale": "Prevents entry into Dumb Zone where reasoning quality degrades",
+      "impact_if_false": "Hallucination and errors increase beyond 60% context fill",
+      "validation_method": "Monitor telemetry and verify rotation triggers",
+      "flows_affected": ["FLOW-002", "FLOW-005", "SFLOW-001"]
+    },
+    {
+      "id": "ASM-010",
+      "category": "quality",
+      "assumption": "All code must pass LLVM/compiler and unit tests before commit",
+      "rationale": "Back pressure ensures code quality; guardrails prevent regressions",
+      "impact_if_false": "Bad code enters codebase; technical debt accumulates",
+      "validation_method": "Pre-commit hooks verify compiler and test pass",
+      "flows_affected": ["FLOW-008", "SFLOW-004"]
+    },
+    {
+      "id": "ASM-011",
+      "category": "task_design",
+      "assumption": "Tasks must be atomic enough to complete in <40% context window",
+      "rationale": "Workers need room for Ralph Loop iterations within Smart Zone",
+      "impact_if_false": "Workers enter Dumb Zone mid-task; quality degrades",
+      "validation_method": "Monitor Worker context fill during task execution",
+      "flows_affected": ["FLOW-001", "FLOW-003", "FLOW-006"]
+    },
+    {
+      "id": "ASM-012",
+      "category": "standards",
+      "assumption": "No export default - only named exports per KreativReason standards",
+      "rationale": "Consistency and explicit imports for maintainability",
+      "impact_if_false": "Code style inconsistency; potential import issues",
+      "validation_method": "RipGrep audit for 'export default' patterns",
+      "flows_affected": ["FLOW-008", "FLOW-018"]
+    },
+    {
+      "id": "ASM-013",
+      "category": "standards",
+      "assumption": "Every Prisma query must include tenantId for multi-tenancy",
+      "rationale": "Data isolation required for multi-tenant SaaS applications",
+      "impact_if_false": "Data leaks between tenants; security vulnerability",
+      "validation_method": "RipGrep audit for Prisma queries without tenantId",
+      "flows_affected": ["FLOW-008", "FLOW-018"]
+    },
+    {
+      "id": "ASM-014",
+      "category": "operation",
+      "assumption": "System operates autonomously but requires human for Crisis intervention",
+      "rationale": "Human oversight needed for emergency situations and course correction",
+      "impact_if_false": "Runaway processes; uncontrolled token burn; bad commits",
+      "validation_method": "Dashboard accessible and Crisis button functional",
+      "flows_affected": ["FLOW-014", "SFLOW-006"]
+    },
+    {
+      "id": "ASM-015",
+      "category": "performance",
+      "assumption": "Worker task completion within 15-30 minute window",
+      "rationale": "Tasks designed as atomic units; longer tasks indicate poor decomposition",
+      "impact_if_false": "Context overflow; task needs splitting",
+      "validation_method": "Monitor task completion times in telemetry",
+      "flows_affected": ["FLOW-006", "SFLOW-004"]
+    },
+    {
+      "id": "ASM-016",
+      "category": "performance",
+      "assumption": "Telemetry latency under 100ms from file change to UI update",
+      "rationale": "Real-time feedback essential for human monitoring",
+      "impact_if_false": "Dashboard appears laggy; human reaction time impacted",
+      "validation_method": "Measure timestamp delta between write and render",
+      "flows_affected": ["FLOW-013", "SFLOW-005", "SFLOW-007"]
+    },
+    {
+      "id": "ASM-017",
+      "category": "performance",
+      "assumption": "Crisis response time under 2 seconds from button click",
+      "rationale": "Emergency stop must be immediate to prevent further damage",
+      "impact_if_false": "Additional bad commits or token burn during delay",
+      "validation_method": "Time from click event to process termination",
+      "flows_affected": ["FLOW-014", "SFLOW-006"]
+    },
+    {
+      "id": "ASM-018",
+      "category": "cost",
+      "assumption": "Cost target of $10.42/hour for autonomous operation",
+      "rationale": "ROI calculation based on this operational cost",
+      "impact_if_false": "Budget overruns; cost tracking inaccurate",
+      "validation_method": "Compare actual API costs with projected rate",
+      "flows_affected": ["FLOW-012"]
+    }
+  ]
+}

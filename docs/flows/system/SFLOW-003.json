@@ -1,0 +1,202 @@
+{
+  "id": "SFLOW-003",
+  "name": "Manager-Worker Communication Flow",
+  "description": "System flow for task assignment, monitoring, and result collection between Shift Manager and Worker agents.",
+  "components": ["shift_manager", "orchestrator", "worker", "filesystem", "telemetry"],
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Manager reads next task from IMPLEMENTATION_PLAN.md",
+      "component": "shift_manager",
+      "inputs": ["IMPLEMENTATION_PLAN.md"],
+      "outputs": ["next_task_id", "task_details"],
+      "data_flow": ["filesystem_read", "regex_parse"],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Manager prepares minimal context package",
+      "component": "shift_manager",
+      "inputs": ["task_details", "PRD_reference"],
+      "outputs": ["context_package"],
+      "data_flow": ["memory_composition"],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Manager writes current_task.md",
+      "component": "filesystem",
+      "inputs": ["context_package"],
+      "outputs": [".agent/current_task.md"],
+      "data_flow": ["filesystem_write"],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Manager signals Orchestrator to spawn Worker",
+      "component": "shift_manager",
+      "inputs": [],
+      "outputs": ["spawn_signal"],
+      "data_flow": ["exit_code_signal"],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Orchestrator spawns fresh Claude Code instance",
+      "component": "orchestrator",
+      "inputs": ["spawn_signal"],
+      "outputs": ["worker_pid", "worker_process"],
+      "data_flow": ["process_fork", "env_setup"],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Worker reads current_task.md",
+      "component": "worker",
+      "inputs": [".agent/current_task.md"],
+      "outputs": ["task_understanding"],
+      "data_flow": ["filesystem_read"],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Worker executes Ralph Wiggum Loop",
+      "component": "worker",
+      "inputs": ["task_understanding"],
+      "outputs": ["code_changes", "commit_hash"],
+      "data_flow": ["edit_compile_test_loop"],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Worker writes status_fragment.md",
+      "component": "filesystem",
+      "inputs": ["completion_summary"],
+      "outputs": [".agent/status_fragment.md"],
+      "data_flow": ["filesystem_write"],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Worker terminates with exit code",
+      "component": "worker",
+      "inputs": [],
+      "outputs": ["exit_code"],
+      "data_flow": ["process_exit"],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Orchestrator captures exit code and cleans up",
+      "component": "orchestrator",
+      "inputs": ["exit_code"],
+      "outputs": ["cleanup_complete"],
+      "data_flow": ["process_reap", "memory_free"],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Orchestrator resets telemetry to 0%",
+      "component": "telemetry",
+      "inputs": [],
+      "outputs": ["telemetry.json updated"],
+      "data_flow": ["filesystem_write"],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "Manager reads status_fragment.md",
+      "component": "shift_manager",
+      "inputs": [".agent/status_fragment.md"],
+      "outputs": ["worker_decisions"],
+      "data_flow": ["filesystem_read"],
+      "next_steps": ["STEP-013"]
+    },
+    {
+      "id": "STEP-013",
+      "sequence": 13,
+      "action": "Manager updates IMPLEMENTATION_PLAN.md checkbox",
+      "component": "filesystem",
+      "inputs": ["task_id", "completion_status"],
+      "outputs": ["IMPLEMENTATION_PLAN.md updated"],
+      "data_flow": ["filesystem_read_modify_write"],
+      "next_steps": ["STEP-014"]
+    },
+    {
+      "id": "STEP-014",
+      "sequence": 14,
+      "action": "Manager appends to ADR.md",
+      "component": "filesystem",
+      "inputs": ["worker_decisions", "commit_hash"],
+      "outputs": ["ADR.md updated"],
+      "data_flow": ["filesystem_append"],
+      "next_steps": []
+    }
+  ],
+  "data_flow": [
+    {
+      "source": "shift_manager",
+      "target": "filesystem",
+      "data": "task context file",
+      "protocol": "filesystem_write"
+    },
+    {
+      "source": "shift_manager",
+      "target": "orchestrator",
+      "data": "spawn request",
+      "protocol": "exit_code_signal"
+    },
+    {
+      "source": "orchestrator",
+      "target": "worker",
+      "data": "process spawn",
+      "protocol": "process_fork"
+    },
+    {
+      "source": "worker",
+      "target": "filesystem",
+      "data": "status fragment",
+      "protocol": "filesystem_write"
+    },
+    {
+      "source": "filesystem",
+      "target": "shift_manager",
+      "data": "worker output",
+      "protocol": "filesystem_read"
+    }
+  ],
+  "error_handling": [
+    {
+      "component": "orchestrator",
+      "error": "worker_spawn_fail",
+      "recovery": "retry spawn with 5s delay"
+    },
+    {
+      "component": "worker",
+      "error": "task_timeout",
+      "recovery": "force kill and log timeout"
+    },
+    {
+      "component": "filesystem",
+      "error": "status_fragment_missing",
+      "recovery": "generate minimal ADR from git log"
+    },
+    {
+      "component": "shift_manager",
+      "error": "plan_update_conflict",
+      "recovery": "retry with file locking"
+    }
+  ]
+}

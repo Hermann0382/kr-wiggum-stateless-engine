@@ -1,0 +1,139 @@
+{
+  "id": "FLOW-002",
+  "name": "Shift Manager Context Monitoring",
+  "description": "The Shift Manager monitors its own token usage and triggers rotation before entering the Dumb Zone (>60% context) to prevent cognitive decay.",
+  "feature_id": "FR-002",
+  "story_ids": ["ST-005"],
+  "actor": "system",
+  "trigger": "Shift Manager instance starts or completes a Worker supervision cycle",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Shift Manager calculates current context fill percentage",
+      "actor": "system",
+      "inputs": ["total_tokens_used", "context_window_size"],
+      "outputs": ["context_fill_percent"],
+      "conditions": ["context_window_size = 200000"],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "System evaluates context health against threshold zones",
+      "actor": "system",
+      "inputs": ["context_fill_percent"],
+      "outputs": ["zone_status"],
+      "conditions": [
+        "Smart Zone: <40%",
+        "Degrading Zone: 40-60%",
+        "Dumb Zone: >60%"
+      ],
+      "next_steps": ["STEP-003", "STEP-004"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "If context < 60%: Continue normal operations and supervise Workers",
+      "actor": "system",
+      "inputs": ["zone_status"],
+      "outputs": ["continue_signal"],
+      "conditions": ["context_fill_percent < 60"],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "If context >= 60%: Initiate shift rotation protocol",
+      "actor": "system",
+      "inputs": ["zone_status"],
+      "outputs": ["rotation_trigger"],
+      "conditions": ["context_fill_percent >= 60"],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Manager writes SHIFT_HANDOFF.md with Accomplishments, Architecture Delta, Blockers",
+      "actor": "system",
+      "inputs": ["session_history", "adr_entries", "current_roadmap_position"],
+      "outputs": ["SHIFT_HANDOFF.md"],
+      "conditions": [],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Manager exits with code 10 to signal rotation to Orchestrator",
+      "actor": "system",
+      "inputs": ["SHIFT_HANDOFF.md"],
+      "outputs": ["exit_code_10"],
+      "conditions": [],
+      "next_steps": []
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Manager updates telemetry.json with current context percentage",
+      "actor": "system",
+      "inputs": ["context_fill_percent", "zone_status"],
+      "outputs": [".ralph/telemetry.json"],
+      "conditions": [],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Check if roadmap is 100% complete",
+      "actor": "system",
+      "inputs": ["IMPLEMENTATION_PLAN.md"],
+      "outputs": ["completion_status"],
+      "conditions": [],
+      "next_steps": ["STEP-009", "STEP-010"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "If roadmap complete: Exit with code 0 to signal project completion",
+      "actor": "system",
+      "inputs": ["completion_status"],
+      "outputs": ["exit_code_0"],
+      "conditions": ["all_tasks_checked"],
+      "next_steps": []
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "If roadmap incomplete: Return to Worker supervision cycle",
+      "actor": "system",
+      "inputs": ["completion_status"],
+      "outputs": ["continue_loop"],
+      "conditions": ["unchecked_tasks_remain"],
+      "next_steps": ["STEP-001"]
+    }
+  ],
+  "success_criteria": [
+    "Context fill percentage calculated accurately as (total_tokens / 200000) * 100",
+    "Rotation triggered when context exceeds 60% threshold",
+    "SHIFT_HANDOFF.md written before termination with complete context",
+    "Exit code 10 used for rotation, exit code 0 for completion",
+    "Telemetry updated in real-time for dashboard visibility"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "Token count unavailable",
+      "recovery_action": "Estimate based on message length and continue",
+      "escalation": "Log warning and set conservative rotation threshold at 50%"
+    },
+    {
+      "error_condition": "SHIFT_HANDOFF.md write fails",
+      "recovery_action": "Retry write operation up to 3 times",
+      "escalation": "Exit with error code and log failure"
+    },
+    {
+      "error_condition": "Telemetry file locked",
+      "recovery_action": "Wait 100ms and retry",
+      "escalation": "Skip telemetry update and log warning"
+    }
+  ]
+}

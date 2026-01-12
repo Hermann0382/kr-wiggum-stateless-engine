@@ -1,0 +1,163 @@
+{
+  "id": "FLOW-017",
+  "name": "Post-Crisis Recovery Analysis",
+  "description": "Forensic analysis system that identifies failure causes after Crisis Mode activation to prevent repeat failures.",
+  "feature_id": "FR-012",
+  "story_ids": ["ST-040", "ST-041"],
+  "actor": "system",
+  "trigger": "Recovery agent starts after Crisis Mode activation",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Recovery agent receives post-crisis startup signal",
+      "actor": "system",
+      "inputs": ["recovery_trigger"],
+      "outputs": ["analysis_job"],
+      "conditions": [],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Read activity.log for events leading to crisis",
+      "actor": "system",
+      "inputs": ["activity.log"],
+      "outputs": ["activity_timeline"],
+      "conditions": [],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Read LAST_COMPILER_ERROR.log for technical failures",
+      "actor": "system",
+      "inputs": ["LAST_COMPILER_ERROR.log"],
+      "outputs": ["error_details"],
+      "conditions": [],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Identify trigger category: vague spec, rule violation, or test gap",
+      "actor": "system",
+      "inputs": ["activity_timeline", "error_details"],
+      "outputs": ["trigger_category"],
+      "conditions": [],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Check if context fill exceeded 60% before failure",
+      "actor": "system",
+      "inputs": ["telemetry_history"],
+      "outputs": ["context_overflow_status"],
+      "conditions": [],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Identify specific file causing token spike (if any)",
+      "actor": "system",
+      "inputs": ["file_read_history"],
+      "outputs": ["problem_file"],
+      "conditions": [],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Generate root cause analysis report",
+      "actor": "system",
+      "inputs": ["all_analysis_data"],
+      "outputs": ["root_cause_report"],
+      "conditions": [],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Clarify ambiguous logic in relevant spec file",
+      "actor": "system",
+      "inputs": ["root_cause_report", "spec_files"],
+      "outputs": ["clarified_spec"],
+      "conditions": ["trigger = vague_spec"],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Split complex task into smaller Units-of-Work",
+      "actor": "system",
+      "inputs": ["failed_task"],
+      "outputs": ["smaller_tasks"],
+      "conditions": ["trigger = task_too_large"],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Propose new test or lint rule for early detection",
+      "actor": "system",
+      "inputs": ["trigger_category"],
+      "outputs": ["new_guardrail"],
+      "conditions": ["trigger = test_gap"],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Update ADR.md with failure analysis and remediation",
+      "actor": "system",
+      "inputs": ["root_cause_report", "remediation_actions"],
+      "outputs": ["updated_ADR.md"],
+      "conditions": [],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "Signal ready for pipeline restart",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["restart_ready"],
+      "conditions": [],
+      "next_steps": []
+    }
+  ],
+  "success_criteria": [
+    "activity.log and LAST_COMPILER_ERROR.log analyzed",
+    "Trigger identified: vague spec, rule violation, or test gap",
+    "Context fill status at failure time checked",
+    "Specific problem file identified if token spike occurred",
+    "Ambiguous spec logic clarified",
+    "Complex task split into smaller Units-of-Work",
+    "New test or lint rule proposed for early detection",
+    "ADR.md updated with failure analysis"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "Log files missing",
+      "recovery_action": "Analyze from git diff and commit messages",
+      "escalation": "Document incomplete forensics in ADR"
+    },
+    {
+      "error_condition": "Root cause indeterminate",
+      "recovery_action": "Flag for human review",
+      "escalation": "Pause pipeline until human investigates"
+    },
+    {
+      "error_condition": "Spec clarification requires human input",
+      "recovery_action": "Generate clarifying questions",
+      "escalation": "Wait for human response before restart"
+    },
+    {
+      "error_condition": "ADR update fails",
+      "recovery_action": "Store analysis in temp file",
+      "escalation": "Manual ADR update required"
+    }
+  ]
+}

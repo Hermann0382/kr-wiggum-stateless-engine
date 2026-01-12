@@ -1,0 +1,3042 @@
+{
+  "artifact_type": "erd",
+  "status": "complete",
+  "validation": "passed",
+  "approval_required": true,
+  "approvers": ["Cynthia", "Hassan", "Usama"],
+  "next_phase": "journey_mapping",
+  "data": {
+    "project_name": "KR-Wiggum Stateless Engine",
+    "version": "2026.1.0",
+    "created_at": "2026-01-11T23:45:00Z",
+    "database_type": "file-based-hybrid",
+    "database_notes": "This system uses a file-based state management paradigm where markdown/JSON files serve as the 'brain outside the AI'. The ERD models both file-based entities (primary state) and runtime entities (ephemeral state) to support the stateless agent architecture.",
+    "entities": [
+      {
+        "id": "ENT-001",
+        "name": "Project",
+        "description": "Top-level project container representing a single autonomous development pipeline instance. Acts as the root entity for all project-related state.",
+        "table_name": "projects",
+        "storage_type": "file",
+        "file_path": ".agent/project.json",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": "uuid_generate_v4()",
+            "constraints": []
+          },
+          {
+            "name": "name",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": true,
+            "default": null,
+            "constraints": ["max_length:255"]
+          },
+          {
+            "name": "owner_email",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["email_format"]
+          },
+          {
+            "name": "version",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "1.0.0",
+            "constraints": ["semver_format"]
+          },
+          {
+            "name": "status",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "initialized",
+            "constraints": ["enum:initialized,distilling,planning,executing,completed,paused,crisis"]
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          },
+          {
+            "name": "root_path",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": true,
+            "default": null,
+            "constraints": ["valid_path"]
+          },
+          {
+            "name": "total_cost_usd",
+            "type": "DECIMAL",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0.00",
+            "constraints": ["precision:10,2", "min:0"]
+          },
+          {
+            "name": "hourly_rate_usd",
+            "type": "DECIMAL",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "10.42",
+            "constraints": ["precision:5,2"]
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_projects_name",
+            "columns": ["name"],
+            "unique": true
+          },
+          {
+            "name": "idx_projects_status",
+            "columns": ["status"],
+            "unique": false
+          }
+        ]
+      },
+      {
+        "id": "ENT-002",
+        "name": "PRD",
+        "description": "Product Requirements Document generated from raw brainstorm. Immutable after creation, versioned changes only. Serves as the source of truth for all agents.",
+        "table_name": "prds",
+        "storage_type": "file",
+        "file_path": "specs/PRD.md",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": "uuid_generate_v4()",
+            "constraints": []
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:projects.id"]
+          },
+          {
+            "name": "version",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "1.0.0",
+            "constraints": ["semver_format"]
+          },
+          {
+            "name": "file_path",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": true,
+            "default": "specs/PRD.md",
+            "constraints": ["valid_path"]
+          },
+          {
+            "name": "content_hash",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["sha256_format"]
+          },
+          {
+            "name": "user_stories_count",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0"]
+          },
+          {
+            "name": "features_count",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0"]
+          },
+          {
+            "name": "is_immutable",
+            "type": "BOOLEAN",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "true",
+            "constraints": []
+          },
+          {
+            "name": "source_brainstorm_path",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_prds_project_id",
+            "columns": ["project_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_prds_version",
+            "columns": ["project_id", "version"],
+            "unique": true
+          }
+        ]
+      },
+      {
+        "id": "ENT-003",
+        "name": "Specification",
+        "description": "Generated specification files including PRD.md, index.md (PIN), and ARCHITECTURE.md. Supports RipGrep-optimized keyword search.",
+        "table_name": "specifications",
+        "storage_type": "file",
+        "file_path": "specs/*.md",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": "uuid_generate_v4()",
+            "constraints": []
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:projects.id"]
+          },
+          {
+            "name": "type",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["enum:prd,pin,architecture,concepts"]
+          },
+          {
+            "name": "file_path",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": true,
+            "default": null,
+            "constraints": ["valid_path"]
+          },
+          {
+            "name": "content_hash",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["sha256_format"]
+          },
+          {
+            "name": "byte_size",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0"]
+          },
+          {
+            "name": "keywords",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "is_searchable",
+            "type": "BOOLEAN",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "true",
+            "constraints": []
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_specifications_project_id",
+            "columns": ["project_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_specifications_type",
+            "columns": ["project_id", "type"],
+            "unique": true
+          },
+          {
+            "name": "idx_specifications_file_path",
+            "columns": ["file_path"],
+            "unique": true
+          }
+        ]
+      },
+      {
+        "id": "ENT-004",
+        "name": "ImplementationPlan",
+        "description": "ROADMAP file containing checkbox-based task list. Uses [ ] and [x] syntax for progress tracking. Ordered by dependency.",
+        "table_name": "implementation_plans",
+        "storage_type": "file",
+        "file_path": ".agent/IMPLEMENTATION_PLAN.md",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": "uuid_generate_v4()",
+            "constraints": []
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:projects.id"]
+          },
+          {
+            "name": "file_path",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": true,
+            "default": ".agent/IMPLEMENTATION_PLAN.md",
+            "constraints": ["valid_path"]
+          },
+          {
+            "name": "total_tasks",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0", "max:500"]
+          },
+          {
+            "name": "completed_tasks",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0"]
+          },
+          {
+            "name": "progress_percent",
+            "type": "DECIMAL",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0.00",
+            "constraints": ["precision:5,2", "min:0", "max:100"]
+          },
+          {
+            "name": "current_task_id",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "dependency_order",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "db_types_services_api_ui",
+            "constraints": ["enum:db_types_services_api_ui,custom"]
+          },
+          {
+            "name": "content_hash",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["sha256_format"]
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_implementation_plans_project_id",
+            "columns": ["project_id"],
+            "unique": true
+          },
+          {
+            "name": "idx_implementation_plans_progress",
+            "columns": ["progress_percent"],
+            "unique": false
+          }
+        ]
+      },
+      {
+        "id": "ENT-005",
+        "name": "Task",
+        "description": "Individual atomic unit of work from the implementation plan. Designed to complete in 15-30 minutes, edit 3-5 files, <150 LOC. Must fit within Worker's Smart Zone (<40% context).",
+        "table_name": "tasks",
+        "storage_type": "embedded",
+        "file_path": ".agent/IMPLEMENTATION_PLAN.md (embedded)",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "STRING",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": null,
+            "constraints": ["pattern:ST-[0-9]{3}"]
+          },
+          {
+            "name": "plan_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:implementation_plans.id"]
+          },
+          {
+            "name": "title",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["max_length:255"]
+          },
+          {
+            "name": "description",
+            "type": "TEXT",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "status",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "pending",
+            "constraints": ["enum:pending,in_progress,completed,blocked,failed"]
+          },
+          {
+            "name": "checkbox_state",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "[ ]",
+            "constraints": ["enum:[ ],[x]"]
+          },
+          {
+            "name": "sequence_order",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0"]
+          },
+          {
+            "name": "dependency_layer",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "services",
+            "constraints": ["enum:db_schema,types,services,api,ui"]
+          },
+          {
+            "name": "estimated_minutes",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "20",
+            "constraints": ["min:5", "max:60"]
+          },
+          {
+            "name": "max_files_to_edit",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "5",
+            "constraints": ["min:1", "max:10"]
+          },
+          {
+            "name": "max_lines_of_code",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "150",
+            "constraints": ["min:10", "max:300"]
+          },
+          {
+            "name": "verification_command",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": "npm test",
+            "constraints": []
+          },
+          {
+            "name": "guardrail_guide_ref",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "commit_hash",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": ["sha1_format"]
+          },
+          {
+            "name": "completed_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "worker_session_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "retry_count",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0", "max:5"]
+          },
+          {
+            "name": "context_fill_at_completion",
+            "type": "DECIMAL",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": ["precision:5,2", "min:0", "max:100"]
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_tasks_plan_id",
+            "columns": ["plan_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_tasks_status",
+            "columns": ["status"],
+            "unique": false
+          },
+          {
+            "name": "idx_tasks_sequence",
+            "columns": ["plan_id", "sequence_order"],
+            "unique": true
+          },
+          {
+            "name": "idx_tasks_dependency_layer",
+            "columns": ["dependency_layer"],
+            "unique": false
+          }
+        ]
+      },
+      {
+        "id": "ENT-006",
+        "name": "ADR",
+        "description": "Architectural Decision Record preserving the 'why' of decisions. Chronological log linked to commits and tasks. Searchable via RipGrep.",
+        "table_name": "adrs",
+        "storage_type": "file",
+        "file_path": ".agent/ADR.md",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "STRING",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": null,
+            "constraints": ["pattern:ADR-[0-9]{3}"]
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:projects.id"]
+          },
+          {
+            "name": "task_id",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "title",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["max_length:255"]
+          },
+          {
+            "name": "decision",
+            "type": "TEXT",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "rationale",
+            "type": "TEXT",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["min_length:50"]
+          },
+          {
+            "name": "alternatives_considered",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "commit_hash",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": ["sha1_format"]
+          },
+          {
+            "name": "keywords",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "status",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "accepted",
+            "constraints": ["enum:proposed,accepted,deprecated,superseded"]
+          },
+          {
+            "name": "superseded_by",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          },
+          {
+            "name": "manager_session_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_adrs_project_id",
+            "columns": ["project_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_adrs_task_id",
+            "columns": ["task_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_adrs_commit_hash",
+            "columns": ["commit_hash"],
+            "unique": false
+          },
+          {
+            "name": "idx_adrs_created_at",
+            "columns": ["created_at"],
+            "unique": false
+          }
+        ]
+      },
+      {
+        "id": "ENT-007",
+        "name": "ShiftReport",
+        "description": "End-of-shift documentation compressing work into high-density summaries. Includes Executive Summary, Completed Tasks, Strategic Memory.",
+        "table_name": "shift_reports",
+        "storage_type": "file",
+        "file_path": ".agent/SHIFT_REPORT_*.md",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": "uuid_generate_v4()",
+            "constraints": []
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:projects.id"]
+          },
+          {
+            "name": "manager_session_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:shift_managers.id"]
+          },
+          {
+            "name": "shift_number",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "1",
+            "constraints": ["min:1"]
+          },
+          {
+            "name": "file_path",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": true,
+            "default": null,
+            "constraints": ["valid_path"]
+          },
+          {
+            "name": "executive_summary",
+            "type": "TEXT",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["max_length:1000"]
+          },
+          {
+            "name": "tasks_completed",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "tasks_count",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0"]
+          },
+          {
+            "name": "architectural_decisions",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "friction_points",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "roadmap_position",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "llvm_status",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "pass",
+            "constraints": ["enum:pass,fail,warning"]
+          },
+          {
+            "name": "tests_status",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "pass",
+            "constraints": ["enum:pass,fail,warning"]
+          },
+          {
+            "name": "standards_compliance",
+            "type": "BOOLEAN",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "true",
+            "constraints": []
+          },
+          {
+            "name": "known_issues",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "context_fill_at_end",
+            "type": "DECIMAL",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0.00",
+            "constraints": ["precision:5,2", "min:0", "max:100"]
+          },
+          {
+            "name": "duration_minutes",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0"]
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_shift_reports_project_id",
+            "columns": ["project_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_shift_reports_shift_number",
+            "columns": ["project_id", "shift_number"],
+            "unique": true
+          },
+          {
+            "name": "idx_shift_reports_manager_session",
+            "columns": ["manager_session_id"],
+            "unique": false
+          }
+        ]
+      },
+      {
+        "id": "ENT-008",
+        "name": "ShiftHandoff",
+        "description": "Context handoff document between Manager rotations. Contains Accomplishments, Architecture Delta, Blockers, and last 5 ADR entries.",
+        "table_name": "shift_handoffs",
+        "storage_type": "file",
+        "file_path": ".agent/SHIFT_HANDOFF.md",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": "uuid_generate_v4()",
+            "constraints": []
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:projects.id"]
+          },
+          {
+            "name": "from_manager_session_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "to_manager_session_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "file_path",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": ".agent/SHIFT_HANDOFF.md",
+            "constraints": ["valid_path"]
+          },
+          {
+            "name": "accomplishments",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "architecture_delta",
+            "type": "TEXT",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "blockers",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "last_5_adrs",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "[]",
+            "constraints": ["max_items:5"]
+          },
+          {
+            "name": "current_task_id",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "roadmap_verified",
+            "type": "BOOLEAN",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "false",
+            "constraints": []
+          },
+          {
+            "name": "context_fill_at_handoff",
+            "type": "DECIMAL",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "60.00",
+            "constraints": ["precision:5,2", "min:0", "max:100"]
+          },
+          {
+            "name": "handoff_reason",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "context_threshold",
+            "constraints": ["enum:context_threshold,completion,error,manual"]
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_shift_handoffs_project_id",
+            "columns": ["project_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_shift_handoffs_from_manager",
+            "columns": ["from_manager_session_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_shift_handoffs_created_at",
+            "columns": ["created_at"],
+            "unique": false
+          }
+        ]
+      },
+      {
+        "id": "ENT-009",
+        "name": "Telemetry",
+        "description": "Real-time agent context and progress data. Ephemeral - cleared on Worker death. Written to telemetry.json and watched for dashboard updates.",
+        "table_name": "telemetry",
+        "storage_type": "file",
+        "file_path": ".ralph/telemetry.json",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": "uuid_generate_v4()",
+            "constraints": []
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:projects.id"]
+          },
+          {
+            "name": "agent_type",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["enum:manager,worker"]
+          },
+          {
+            "name": "session_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "context_fill_percent",
+            "type": "DECIMAL",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0.00",
+            "constraints": ["precision:5,2", "min:0", "max:100"]
+          },
+          {
+            "name": "total_tokens",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0", "max:200000"]
+          },
+          {
+            "name": "context_window_size",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "200000",
+            "constraints": []
+          },
+          {
+            "name": "zone",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "smart",
+            "constraints": ["enum:smart,degrading,dumb"]
+          },
+          {
+            "name": "current_task_id",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "current_task_title",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "ralph_loop_iteration",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0", "max:5"]
+          },
+          {
+            "name": "last_action",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "guardrail_status",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "{\"compiler\": null, \"tests\": null, \"tenantId\": null}",
+            "constraints": []
+          },
+          {
+            "name": "is_ephemeral",
+            "type": "BOOLEAN",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "true",
+            "constraints": []
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_telemetry_project_id",
+            "columns": ["project_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_telemetry_session_id",
+            "columns": ["session_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_telemetry_agent_type",
+            "columns": ["agent_type"],
+            "unique": false
+          }
+        ]
+      },
+      {
+        "id": "ENT-010",
+        "name": "CompilerError",
+        "description": "LAST_COMPILER_ERROR.log entries. Truncated to <1000 tokens. Bridge between failed attempts and fresh Workers. Cleared after successful compilation.",
+        "table_name": "compiler_errors",
+        "storage_type": "file",
+        "file_path": ".agent/LAST_COMPILER_ERROR.log",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": "uuid_generate_v4()",
+            "constraints": []
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:projects.id"]
+          },
+          {
+            "name": "task_id",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "worker_session_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "error_type",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "compiler",
+            "constraints": ["enum:compiler,typescript,test,lint"]
+          },
+          {
+            "name": "raw_output",
+            "type": "TEXT",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "truncated_output",
+            "type": "TEXT",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["max_tokens:1000"]
+          },
+          {
+            "name": "file_path",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "line_number",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": ["min:1"]
+          },
+          {
+            "name": "error_code",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "is_cleared",
+            "type": "BOOLEAN",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "false",
+            "constraints": []
+          },
+          {
+            "name": "cleared_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_compiler_errors_project_id",
+            "columns": ["project_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_compiler_errors_task_id",
+            "columns": ["task_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_compiler_errors_is_cleared",
+            "columns": ["is_cleared"],
+            "unique": false
+          }
+        ]
+      },
+      {
+        "id": "ENT-011",
+        "name": "StatusFragment",
+        "description": "Worker output summary generated before self-destruct. Compact format (<500 tokens). Documents what was fixed, changed, and patterns used.",
+        "table_name": "status_fragments",
+        "storage_type": "file",
+        "file_path": ".agent/status_fragment.md",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": "uuid_generate_v4()",
+            "constraints": []
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:projects.id"]
+          },
+          {
+            "name": "task_id",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "worker_session_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "what_was_fixed",
+            "type": "TEXT",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "what_was_changed",
+            "type": "TEXT",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "patterns_used",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "files_modified",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "lines_modified_count",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0"]
+          },
+          {
+            "name": "commit_hash",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": ["sha1_format"]
+          },
+          {
+            "name": "token_count",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0", "max:500"]
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_status_fragments_project_id",
+            "columns": ["project_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_status_fragments_task_id",
+            "columns": ["task_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_status_fragments_worker_session",
+            "columns": ["worker_session_id"],
+            "unique": false
+          }
+        ]
+      },
+      {
+        "id": "ENT-012",
+        "name": "ShiftManager",
+        "description": "Active manager instance state. Strategic oversight controller that maintains roadmap and oversees Workers. Self-monitors at 60% context threshold.",
+        "table_name": "shift_managers",
+        "storage_type": "runtime",
+        "file_path": null,
+        "attributes": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": "uuid_generate_v4()",
+            "constraints": []
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:projects.id"]
+          },
+          {
+            "name": "process_id",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "status",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "initializing",
+            "constraints": ["enum:initializing,active,rotating,completed,crashed"]
+          },
+          {
+            "name": "shift_number",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "1",
+            "constraints": ["min:1"]
+          },
+          {
+            "name": "context_fill_percent",
+            "type": "DECIMAL",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0.00",
+            "constraints": ["precision:5,2", "min:0", "max:100"]
+          },
+          {
+            "name": "context_threshold",
+            "type": "DECIMAL",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "60.00",
+            "constraints": ["precision:5,2"]
+          },
+          {
+            "name": "total_tokens",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0", "max:200000"]
+          },
+          {
+            "name": "tasks_assigned",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0"]
+          },
+          {
+            "name": "tasks_completed",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0"]
+          },
+          {
+            "name": "current_task_id",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "handoff_file_path",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "exit_code",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": ["enum:0,10,-1"]
+          },
+          {
+            "name": "started_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          },
+          {
+            "name": "ended_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_shift_managers_project_id",
+            "columns": ["project_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_shift_managers_status",
+            "columns": ["status"],
+            "unique": false
+          },
+          {
+            "name": "idx_shift_managers_shift_number",
+            "columns": ["project_id", "shift_number"],
+            "unique": true
+          }
+        ]
+      },
+      {
+        "id": "ENT-013",
+        "name": "Worker",
+        "description": "Active worker instance state. Disposable agent executing one atomic task via Ralph Wiggum Loop. Terminates with zero memory retention.",
+        "table_name": "workers",
+        "storage_type": "runtime",
+        "file_path": null,
+        "attributes": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": "uuid_generate_v4()",
+            "constraints": []
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:projects.id"]
+          },
+          {
+            "name": "manager_session_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:shift_managers.id"]
+          },
+          {
+            "name": "task_id",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "process_id",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "status",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "spawning",
+            "constraints": ["enum:spawning,booting,executing,committing,terminating,completed,failed"]
+          },
+          {
+            "name": "context_fill_percent",
+            "type": "DECIMAL",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0.00",
+            "constraints": ["precision:5,2", "min:0", "max:100"]
+          },
+          {
+            "name": "smart_zone_threshold",
+            "type": "DECIMAL",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "40.00",
+            "constraints": ["precision:5,2"]
+          },
+          {
+            "name": "total_tokens",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0", "max:200000"]
+          },
+          {
+            "name": "ralph_loop_iteration",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["min:0", "max:5"]
+          },
+          {
+            "name": "max_retries",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "5",
+            "constraints": []
+          },
+          {
+            "name": "commit_hash",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": ["sha1_format"]
+          },
+          {
+            "name": "exit_code",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "is_stateless",
+            "type": "BOOLEAN",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "true",
+            "constraints": []
+          },
+          {
+            "name": "spawned_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          },
+          {
+            "name": "terminated_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_workers_project_id",
+            "columns": ["project_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_workers_manager_session",
+            "columns": ["manager_session_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_workers_task_id",
+            "columns": ["task_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_workers_status",
+            "columns": ["status"],
+            "unique": false
+          }
+        ]
+      },
+      {
+        "id": "ENT-014",
+        "name": "DashboardSession",
+        "description": "Connected browser client for real-time dashboard. Receives telemetry, roadmap progress, and crisis signals via WebSocket.",
+        "table_name": "dashboard_sessions",
+        "storage_type": "runtime",
+        "file_path": null,
+        "attributes": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": "uuid_generate_v4()",
+            "constraints": []
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:projects.id"]
+          },
+          {
+            "name": "socket_id",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": true,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "client_ip",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "user_agent",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "status",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "connected",
+            "constraints": ["enum:connected,disconnected,reconnecting"]
+          },
+          {
+            "name": "last_telemetry_received_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "last_roadmap_received_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "crisis_triggered",
+            "type": "BOOLEAN",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "false",
+            "constraints": []
+          },
+          {
+            "name": "connected_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          },
+          {
+            "name": "disconnected_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_dashboard_sessions_project_id",
+            "columns": ["project_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_dashboard_sessions_socket_id",
+            "columns": ["socket_id"],
+            "unique": true
+          },
+          {
+            "name": "idx_dashboard_sessions_status",
+            "columns": ["status"],
+            "unique": false
+          }
+        ]
+      },
+      {
+        "id": "ENT-015",
+        "name": "CrisisEvent",
+        "description": "Crisis mode activation records. Triggers process termination, git reset, and telemetry clear. Preserves history for forensic analysis.",
+        "table_name": "crisis_events",
+        "storage_type": "file",
+        "file_path": ".agent/crisis.log",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": "uuid_generate_v4()",
+            "constraints": []
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:projects.id"]
+          },
+          {
+            "name": "triggered_by_session_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "trigger_source",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "dashboard",
+            "constraints": ["enum:dashboard,cli,automatic"]
+          },
+          {
+            "name": "manager_session_id_killed",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "worker_session_id_killed",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "task_id_at_crisis",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "git_head_before",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": ["sha1_format"]
+          },
+          {
+            "name": "git_head_after",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": ["sha1_format"]
+          },
+          {
+            "name": "processes_killed",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "termination_time_ms",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "0",
+            "constraints": ["max:2000"]
+          },
+          {
+            "name": "telemetry_reset",
+            "type": "BOOLEAN",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "true",
+            "constraints": []
+          },
+          {
+            "name": "recovery_analysis_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "reason",
+            "type": "TEXT",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "triggered_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          },
+          {
+            "name": "completed_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_crisis_events_project_id",
+            "columns": ["project_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_crisis_events_triggered_at",
+            "columns": ["triggered_at"],
+            "unique": false
+          },
+          {
+            "name": "idx_crisis_events_task_id",
+            "columns": ["task_id_at_crisis"],
+            "unique": false
+          }
+        ]
+      },
+      {
+        "id": "ENT-016",
+        "name": "SlashCommand",
+        "description": "Command definitions for human-friendly CLI interface. Abstracts complex orchestration into simple intent-based actions.",
+        "table_name": "slash_commands",
+        "storage_type": "config",
+        "file_path": ".agent/commands.json",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "STRING",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": null,
+            "constraints": ["pattern:/\\.\\.\\.[a-z]+"]
+          },
+          {
+            "name": "name",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": true,
+            "default": null,
+            "constraints": ["enum:seed,plan,loop,status,digest"]
+          },
+          {
+            "name": "description",
+            "type": "TEXT",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "usage_syntax",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "required_args",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "optional_args",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "triggers_component",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["enum:distiller,orchestrator,shift_manager,watcher"]
+          },
+          {
+            "name": "outputs",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "priority",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "high",
+            "constraints": ["enum:high,medium,low"]
+          },
+          {
+            "name": "is_enabled",
+            "type": "BOOLEAN",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "true",
+            "constraints": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_slash_commands_name",
+            "columns": ["name"],
+            "unique": true
+          },
+          {
+            "name": "idx_slash_commands_priority",
+            "columns": ["priority"],
+            "unique": false
+          }
+        ]
+      },
+      {
+        "id": "ENT-017",
+        "name": "GuardrailRule",
+        "description": "KreativReason standards enforcement rules. Back pressure checks including tenantId verification, Zod validation, named exports, and test coverage.",
+        "table_name": "guardrail_rules",
+        "storage_type": "config",
+        "file_path": ".agent/guardrails.json",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "STRING",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": null,
+            "constraints": ["pattern:GR-[0-9]{3}"]
+          },
+          {
+            "name": "name",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": true,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "description",
+            "type": "TEXT",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "category",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["enum:compiler,tests,lint,security,multi_tenancy,exports"]
+          },
+          {
+            "name": "check_type",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "ripgrep",
+            "constraints": ["enum:ripgrep,compiler,test_runner,custom"]
+          },
+          {
+            "name": "pattern",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "command",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "file_glob",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "severity",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "error",
+            "constraints": ["enum:error,warning,info"]
+          },
+          {
+            "name": "blocks_commit",
+            "type": "BOOLEAN",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "true",
+            "constraints": []
+          },
+          {
+            "name": "error_message",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "remediation_guide",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "coverage_threshold",
+            "type": "INTEGER",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": ["min:0", "max:100"]
+          },
+          {
+            "name": "is_enabled",
+            "type": "BOOLEAN",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "true",
+            "constraints": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_guardrail_rules_name",
+            "columns": ["name"],
+            "unique": true
+          },
+          {
+            "name": "idx_guardrail_rules_category",
+            "columns": ["category"],
+            "unique": false
+          },
+          {
+            "name": "idx_guardrail_rules_severity",
+            "columns": ["severity"],
+            "unique": false
+          }
+        ]
+      },
+      {
+        "id": "ENT-018",
+        "name": "RecoveryAnalysis",
+        "description": "Post-crisis forensic analysis results. Identifies failure causes to prevent repeat failures. Updates specs and ADR with lessons learned.",
+        "table_name": "recovery_analyses",
+        "storage_type": "file",
+        "file_path": ".agent/recovery/*.md",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "primary_key": true,
+            "nullable": false,
+            "unique": true,
+            "default": "uuid_generate_v4()",
+            "constraints": []
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:projects.id"]
+          },
+          {
+            "name": "crisis_event_id",
+            "type": "UUID",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["fk:crisis_events.id"]
+          },
+          {
+            "name": "trigger_type",
+            "type": "ENUM",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": ["enum:vague_spec,rule_violation,test_gap,context_overflow,hallucination"]
+          },
+          {
+            "name": "root_cause",
+            "type": "TEXT",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "files_analyzed",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "context_fill_at_failure",
+            "type": "DECIMAL",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": ["precision:5,2", "min:0", "max:100"]
+          },
+          {
+            "name": "token_spike_file",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "spec_clarifications",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "task_splits_proposed",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "new_rules_proposed",
+            "type": "JSON",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": "[]",
+            "constraints": []
+          },
+          {
+            "name": "adr_entry_created",
+            "type": "STRING",
+            "primary_key": false,
+            "nullable": true,
+            "unique": false,
+            "default": null,
+            "constraints": []
+          },
+          {
+            "name": "analyzed_at",
+            "type": "TIMESTAMP",
+            "primary_key": false,
+            "nullable": false,
+            "unique": false,
+            "default": "now()",
+            "constraints": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_recovery_analyses_project_id",
+            "columns": ["project_id"],
+            "unique": false
+          },
+          {
+            "name": "idx_recovery_analyses_crisis_event",
+            "columns": ["crisis_event_id"],
+            "unique": true
+          },
+          {
+            "name": "idx_recovery_analyses_trigger_type",
+            "columns": ["trigger_type"],
+            "unique": false
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "id": "REL-001",
+        "name": "prd_belongs_to_project",
+        "from_entity": "ENT-002",
+        "to_entity": "ENT-001",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "project_id",
+        "cascade_delete": true,
+        "_comment": "PRD (from_entity) HAS project_id FK referencing Project (to_entity)"
+      },
+      {
+        "id": "REL-002",
+        "name": "specification_belongs_to_project",
+        "from_entity": "ENT-003",
+        "to_entity": "ENT-001",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "project_id",
+        "cascade_delete": true,
+        "_comment": "Specification (from_entity) HAS project_id FK referencing Project (to_entity)"
+      },
+      {
+        "id": "REL-003",
+        "name": "implementation_plan_belongs_to_project",
+        "from_entity": "ENT-004",
+        "to_entity": "ENT-001",
+        "from_cardinality": "1",
+        "to_cardinality": "1",
+        "relationship_type": "one-to-one",
+        "foreign_key": "project_id",
+        "cascade_delete": true,
+        "_comment": "ImplementationPlan (from_entity) HAS project_id FK referencing Project (to_entity)"
+      },
+      {
+        "id": "REL-004",
+        "name": "task_belongs_to_plan",
+        "from_entity": "ENT-005",
+        "to_entity": "ENT-004",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "plan_id",
+        "cascade_delete": true,
+        "_comment": "Task (from_entity) HAS plan_id FK referencing ImplementationPlan (to_entity)"
+      },
+      {
+        "id": "REL-005",
+        "name": "adr_belongs_to_project",
+        "from_entity": "ENT-006",
+        "to_entity": "ENT-001",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "project_id",
+        "cascade_delete": true,
+        "_comment": "ADR (from_entity) HAS project_id FK referencing Project (to_entity)"
+      },
+      {
+        "id": "REL-006",
+        "name": "adr_references_task",
+        "from_entity": "ENT-006",
+        "to_entity": "ENT-005",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "task_id",
+        "cascade_delete": false,
+        "_comment": "ADR (from_entity) HAS task_id FK referencing Task (to_entity)"
+      },
+      {
+        "id": "REL-007",
+        "name": "shift_report_belongs_to_project",
+        "from_entity": "ENT-007",
+        "to_entity": "ENT-001",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "project_id",
+        "cascade_delete": true,
+        "_comment": "ShiftReport (from_entity) HAS project_id FK referencing Project (to_entity)"
+      },
+      {
+        "id": "REL-008",
+        "name": "shift_report_belongs_to_manager",
+        "from_entity": "ENT-007",
+        "to_entity": "ENT-012",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "manager_session_id",
+        "cascade_delete": false,
+        "_comment": "ShiftReport (from_entity) HAS manager_session_id FK referencing ShiftManager (to_entity)"
+      },
+      {
+        "id": "REL-009",
+        "name": "shift_handoff_belongs_to_project",
+        "from_entity": "ENT-008",
+        "to_entity": "ENT-001",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "project_id",
+        "cascade_delete": true,
+        "_comment": "ShiftHandoff (from_entity) HAS project_id FK referencing Project (to_entity)"
+      },
+      {
+        "id": "REL-010",
+        "name": "telemetry_belongs_to_project",
+        "from_entity": "ENT-009",
+        "to_entity": "ENT-001",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "project_id",
+        "cascade_delete": true,
+        "_comment": "Telemetry (from_entity) HAS project_id FK referencing Project (to_entity)"
+      },
+      {
+        "id": "REL-011",
+        "name": "compiler_error_belongs_to_project",
+        "from_entity": "ENT-010",
+        "to_entity": "ENT-001",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "project_id",
+        "cascade_delete": true,
+        "_comment": "CompilerError (from_entity) HAS project_id FK referencing Project (to_entity)"
+      },
+      {
+        "id": "REL-012",
+        "name": "status_fragment_belongs_to_project",
+        "from_entity": "ENT-011",
+        "to_entity": "ENT-001",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "project_id",
+        "cascade_delete": true,
+        "_comment": "StatusFragment (from_entity) HAS project_id FK referencing Project (to_entity)"
+      },
+      {
+        "id": "REL-013",
+        "name": "status_fragment_references_task",
+        "from_entity": "ENT-011",
+        "to_entity": "ENT-005",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "task_id",
+        "cascade_delete": false,
+        "_comment": "StatusFragment (from_entity) HAS task_id FK referencing Task (to_entity)"
+      },
+      {
+        "id": "REL-014",
+        "name": "shift_manager_belongs_to_project",
+        "from_entity": "ENT-012",
+        "to_entity": "ENT-001",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "project_id",
+        "cascade_delete": true,
+        "_comment": "ShiftManager (from_entity) HAS project_id FK referencing Project (to_entity)"
+      },
+      {
+        "id": "REL-015",
+        "name": "worker_belongs_to_project",
+        "from_entity": "ENT-013",
+        "to_entity": "ENT-001",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "project_id",
+        "cascade_delete": true,
+        "_comment": "Worker (from_entity) HAS project_id FK referencing Project (to_entity)"
+      },
+      {
+        "id": "REL-016",
+        "name": "worker_belongs_to_manager",
+        "from_entity": "ENT-013",
+        "to_entity": "ENT-012",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "manager_session_id",
+        "cascade_delete": false,
+        "_comment": "Worker (from_entity) HAS manager_session_id FK referencing ShiftManager (to_entity)"
+      },
+      {
+        "id": "REL-017",
+        "name": "dashboard_session_belongs_to_project",
+        "from_entity": "ENT-014",
+        "to_entity": "ENT-001",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "project_id",
+        "cascade_delete": true,
+        "_comment": "DashboardSession (from_entity) HAS project_id FK referencing Project (to_entity)"
+      },
+      {
+        "id": "REL-018",
+        "name": "crisis_event_belongs_to_project",
+        "from_entity": "ENT-015",
+        "to_entity": "ENT-001",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "project_id",
+        "cascade_delete": true,
+        "_comment": "CrisisEvent (from_entity) HAS project_id FK referencing Project (to_entity)"
+      },
+      {
+        "id": "REL-019",
+        "name": "recovery_analysis_belongs_to_project",
+        "from_entity": "ENT-018",
+        "to_entity": "ENT-001",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "project_id",
+        "cascade_delete": true,
+        "_comment": "RecoveryAnalysis (from_entity) HAS project_id FK referencing Project (to_entity)"
+      },
+      {
+        "id": "REL-020",
+        "name": "recovery_analysis_references_crisis",
+        "from_entity": "ENT-018",
+        "to_entity": "ENT-015",
+        "from_cardinality": "1",
+        "to_cardinality": "1",
+        "relationship_type": "one-to-one",
+        "foreign_key": "crisis_event_id",
+        "cascade_delete": false,
+        "_comment": "RecoveryAnalysis (from_entity) HAS crisis_event_id FK referencing CrisisEvent (to_entity)"
+      },
+      {
+        "id": "REL-021",
+        "name": "task_executed_by_worker",
+        "from_entity": "ENT-005",
+        "to_entity": "ENT-013",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "worker_session_id",
+        "cascade_delete": false,
+        "_comment": "Task (from_entity) HAS worker_session_id FK referencing Worker (to_entity)"
+      },
+      {
+        "id": "REL-022",
+        "name": "status_fragment_produced_by_worker",
+        "from_entity": "ENT-011",
+        "to_entity": "ENT-013",
+        "from_cardinality": "many",
+        "to_cardinality": "1",
+        "relationship_type": "many-to-one",
+        "foreign_key": "worker_session_id",
+        "cascade_delete": false,
+        "_comment": "StatusFragment (from_entity) HAS worker_session_id FK referencing Worker (to_entity)"
+      }
+    ],
+    "constraints": [
+      {
+        "type": "check",
+        "entity": "ENT-001",
+        "name": "valid_email",
+        "expression": "owner_email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$'"
+      },
+      {
+        "type": "check",
+        "entity": "ENT-004",
+        "name": "valid_progress",
+        "expression": "completed_tasks <= total_tasks AND progress_percent BETWEEN 0 AND 100"
+      },
+      {
+        "type": "check",
+        "entity": "ENT-005",
+        "name": "valid_task_constraints",
+        "expression": "max_files_to_edit BETWEEN 1 AND 10 AND max_lines_of_code BETWEEN 10 AND 300 AND estimated_minutes BETWEEN 5 AND 60"
+      },
+      {
+        "type": "check",
+        "entity": "ENT-009",
+        "name": "valid_context_zone",
+        "expression": "(zone = 'smart' AND context_fill_percent < 40) OR (zone = 'degrading' AND context_fill_percent BETWEEN 40 AND 60) OR (zone = 'dumb' AND context_fill_percent > 60)"
+      },
+      {
+        "type": "check",
+        "entity": "ENT-010",
+        "name": "truncated_under_limit",
+        "expression": "length(truncated_output) <= 4000"
+      },
+      {
+        "type": "check",
+        "entity": "ENT-011",
+        "name": "token_count_limit",
+        "expression": "token_count <= 500"
+      },
+      {
+        "type": "check",
+        "entity": "ENT-012",
+        "name": "valid_exit_codes",
+        "expression": "exit_code IS NULL OR exit_code IN (0, 10, -1)"
+      },
+      {
+        "type": "check",
+        "entity": "ENT-013",
+        "name": "stateless_worker",
+        "expression": "is_stateless = true"
+      },
+      {
+        "type": "check",
+        "entity": "ENT-015",
+        "name": "termination_under_2s",
+        "expression": "termination_time_ms <= 2000"
+      },
+      {
+        "type": "unique",
+        "entity": "ENT-005",
+        "name": "unique_task_sequence",
+        "expression": "UNIQUE(plan_id, sequence_order)"
+      },
+      {
+        "type": "unique",
+        "entity": "ENT-007",
+        "name": "unique_shift_number",
+        "expression": "UNIQUE(project_id, shift_number)"
+      },
+      {
+        "type": "unique",
+        "entity": "ENT-012",
+        "name": "unique_manager_shift",
+        "expression": "UNIQUE(project_id, shift_number)"
+      }
+    ],
+    "migrations": {
+      "initial_schema": "This is a file-based hybrid system. Initial setup involves creating the .agent/, .ralph/, and specs/ directories with appropriate JSON/MD templates.",
+      "seed_data": [
+        {
+          "entity": "ENT-016",
+          "data": [
+            {"id": "/...seed", "name": "seed", "description": "Triggers Distiller to convert brainstorm to specifications", "triggers_component": "distiller"},
+            {"id": "/...plan", "name": "plan", "description": "Updates IMPLEMENTATION_PLAN.md based on gap analysis", "triggers_component": "distiller"},
+            {"id": "/...loop", "name": "loop", "description": "Starts autonomous implementation via orchestrate.sh", "triggers_component": "orchestrator"},
+            {"id": "/...status", "name": "status", "description": "Shows progress in terminal-friendly format", "triggers_component": "watcher"},
+            {"id": "/...digest", "name": "digest", "description": "Organizes messy brainstorm pastes", "triggers_component": "distiller"}
+          ]
+        },
+        {
+          "entity": "ENT-017",
+          "data": [
+            {"id": "GR-001", "name": "tenantId_required", "category": "multi_tenancy", "pattern": "prisma\\..*\\.(find|create|update|delete)", "severity": "error", "blocks_commit": true},
+            {"id": "GR-002", "name": "zod_validation", "category": "security", "pattern": "\\.parse\\(|z\\.object", "severity": "error", "blocks_commit": true},
+            {"id": "GR-003", "name": "named_exports_only", "category": "exports", "pattern": "export default", "severity": "error", "blocks_commit": true},
+            {"id": "GR-004", "name": "typescript_strict", "category": "compiler", "command": "npx tsc --noEmit", "severity": "error", "blocks_commit": true},
+            {"id": "GR-005", "name": "test_coverage_services", "category": "tests", "coverage_threshold": 90, "severity": "warning", "blocks_commit": false},
+            {"id": "GR-006", "name": "test_coverage_controllers", "category": "tests", "coverage_threshold": 80, "severity": "warning", "blocks_commit": false}
+          ]
+        }
+      ]
+    },
+    "storage_architecture": {
+      "description": "Hybrid file-based and runtime state management supporting the 'brain outside the AI' paradigm",
+      "file_based_entities": ["ENT-001", "ENT-002", "ENT-003", "ENT-004", "ENT-005", "ENT-006", "ENT-007", "ENT-008", "ENT-009", "ENT-010", "ENT-011", "ENT-015", "ENT-016", "ENT-017", "ENT-018"],
+      "runtime_entities": ["ENT-012", "ENT-013", "ENT-014"],
+      "ephemeral_entities": ["ENT-009"],
+      "directories": {
+        ".agent/": "Primary state directory for project artifacts and agent communication",
+        ".ralph/": "Telemetry and real-time monitoring data",
+        "specs/": "Generated specifications (PRD, PIN, ARCHITECTURE)"
+      },
+      "primary_identifiers": "File paths serve as primary identifiers for file-based entities"
+    },
+    "prd_feature_coverage": {
+      "FR-001": ["ENT-002", "ENT-003", "ENT-004", "ENT-005"],
+      "FR-002": ["ENT-006", "ENT-007", "ENT-008", "ENT-012"],
+      "FR-003": ["ENT-005", "ENT-011", "ENT-013"],
+      "FR-004": ["ENT-010", "ENT-017"],
+      "FR-005": ["ENT-012", "ENT-013"],
+      "FR-006": ["ENT-004", "ENT-005", "ENT-006", "ENT-010"],
+      "FR-007": ["ENT-009", "ENT-014"],
+      "FR-008": ["ENT-009", "ENT-014"],
+      "FR-009": ["ENT-015", "ENT-018"],
+      "FR-010": ["ENT-016"],
+      "FR-011": ["ENT-007", "ENT-008"],
+      "FR-012": ["ENT-015", "ENT-018"],
+      "FR-013": ["ENT-001", "ENT-007"]
+    }
+  }
+}

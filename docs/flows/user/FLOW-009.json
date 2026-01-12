@@ -1,0 +1,160 @@
+{
+  "id": "FLOW-009",
+  "name": "Orchestrator Manager Lifecycle",
+  "description": "Manages Shift Manager instance lifecycles including launching, monitoring exit codes, and handling rotation at 60% context threshold.",
+  "feature_id": "FR-005",
+  "story_ids": ["ST-016"],
+  "actor": "system",
+  "trigger": "User executes /...loop command OR previous Manager rotates",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Orchestrator checks for existing SHIFT_HANDOFF.md file",
+      "actor": "system",
+      "inputs": ["filesystem"],
+      "outputs": ["handoff_exists"],
+      "conditions": [],
+      "next_steps": ["STEP-002", "STEP-003"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "If handoff exists: Prepare Manager launch with handoff context",
+      "actor": "system",
+      "inputs": ["SHIFT_HANDOFF.md"],
+      "outputs": ["manager_args_with_handoff"],
+      "conditions": ["handoff_exists = true"],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "If no handoff: Prepare fresh Manager launch",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["manager_args_fresh"],
+      "conditions": ["handoff_exists = false"],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Launch new Shift Manager Claude Code instance",
+      "actor": "system",
+      "inputs": ["manager_args"],
+      "outputs": ["manager_pid", "manager_process"],
+      "conditions": [],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Monitor Manager process and capture output",
+      "actor": "system",
+      "inputs": ["manager_process"],
+      "outputs": ["manager_stdout", "manager_stderr"],
+      "conditions": [],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Wait for Manager exit and capture exit code",
+      "actor": "system",
+      "inputs": ["manager_process"],
+      "outputs": ["exit_code"],
+      "conditions": [],
+      "next_steps": ["STEP-007", "STEP-008", "STEP-009"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "If exit code 0: Roadmap complete - terminate loop",
+      "actor": "system",
+      "inputs": ["exit_code"],
+      "outputs": ["loop_complete"],
+      "conditions": ["exit_code = 0"],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "If exit code 10: Rotation required - restart Manager",
+      "actor": "system",
+      "inputs": ["exit_code"],
+      "outputs": ["rotation_signal"],
+      "conditions": ["exit_code = 10"],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "If other exit code: Error condition - handle recovery",
+      "actor": "system",
+      "inputs": ["exit_code"],
+      "outputs": ["error_signal"],
+      "conditions": ["exit_code != 0", "exit_code != 10"],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Kill old Manager process and spawn fresh instance",
+      "actor": "system",
+      "inputs": ["manager_pid"],
+      "outputs": ["new_manager_spawn"],
+      "conditions": [],
+      "next_steps": ["STEP-001"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Handle error: Log and implement retry with 5s delay",
+      "actor": "system",
+      "inputs": ["error_signal", "retry_count"],
+      "outputs": ["retry_decision"],
+      "conditions": ["retry_count < 3"],
+      "next_steps": ["STEP-001"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "Pipeline complete: Output final status and clean up",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["completion_status"],
+      "conditions": [],
+      "next_steps": []
+    }
+  ],
+  "success_criteria": [
+    "Fresh Manager launched with HANDOFF_FILE if exists",
+    "Exit codes monitored: 0=complete, 10=rotate, other=error",
+    "Manager killed and restarted on rotation signal",
+    "Loop maintained until roadmap 100% complete",
+    "Clean termination on project completion"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "Manager fails to start",
+      "recovery_action": "Retry launch up to 3 times with 5s delay",
+      "escalation": "Halt and alert user"
+    },
+    {
+      "error_condition": "Unexpected exit code",
+      "recovery_action": "Log error and retry with delay",
+      "escalation": "Halt after 3 consecutive failures"
+    },
+    {
+      "error_condition": "SHIFT_HANDOFF.md corrupted",
+      "recovery_action": "Start fresh Manager without handoff",
+      "escalation": "Log loss of context continuity"
+    },
+    {
+      "error_condition": "Manager process becomes zombie",
+      "recovery_action": "Force SIGKILL and restart",
+      "escalation": "Log zombie process for debugging"
+    }
+  ]
+}

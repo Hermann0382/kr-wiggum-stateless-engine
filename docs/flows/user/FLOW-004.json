@@ -1,0 +1,115 @@
+{
+  "id": "FLOW-004",
+  "name": "ADR Management",
+  "description": "Shift Manager logs architectural decisions from Worker outputs to preserve project history across agent lifetimes.",
+  "feature_id": "FR-002",
+  "story_ids": ["ST-007"],
+  "actor": "system",
+  "trigger": "Worker completes task and generates Status Fragment",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Manager reads Worker Status Fragment from temp file",
+      "actor": "system",
+      "inputs": [".agent/status_fragment.md"],
+      "outputs": ["raw_status_fragment"],
+      "conditions": ["file_exists", "file_size < 500 tokens"],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Manager extracts architectural decisions from Status Fragment",
+      "actor": "system",
+      "inputs": ["raw_status_fragment"],
+      "outputs": ["decisions_list", "patterns_used", "rationale"],
+      "conditions": [],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Manager retrieves current git commit hash",
+      "actor": "system",
+      "inputs": ["git_log"],
+      "outputs": ["commit_hash"],
+      "conditions": [],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Manager formats ADR entry with why, not just what",
+      "actor": "system",
+      "inputs": ["decisions_list", "commit_hash", "task_id", "rationale"],
+      "outputs": ["formatted_adr_entry"],
+      "conditions": [],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Manager appends ADR entry to .agent/ADR.md",
+      "actor": "system",
+      "inputs": ["formatted_adr_entry"],
+      "outputs": ["updated_ADR.md"],
+      "conditions": [],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Manager validates ADR entry contains required fields",
+      "actor": "system",
+      "inputs": ["updated_ADR.md"],
+      "outputs": ["validation_result"],
+      "conditions": [
+        "has_commit_hash",
+        "has_task_id",
+        "has_rationale",
+        "has_timestamp"
+      ],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Manager cleans up Status Fragment temp file",
+      "actor": "system",
+      "inputs": [".agent/status_fragment.md"],
+      "outputs": ["cleanup_confirmation"],
+      "conditions": [],
+      "next_steps": []
+    }
+  ],
+  "success_criteria": [
+    "Worker Status Fragment read after task completion",
+    "Decisions distilled into .agent/ADR.md entries",
+    "Each ADR entry linked to specific commit hash",
+    "Why preserved, not just what, for each decision",
+    "ADR entries searchable via RipGrep keywords"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "Status Fragment missing",
+      "recovery_action": "Generate minimal entry from task description",
+      "escalation": "Log warning about missing Worker output"
+    },
+    {
+      "error_condition": "Git commit hash unavailable",
+      "recovery_action": "Use 'uncommitted' placeholder",
+      "escalation": "Log warning and continue"
+    },
+    {
+      "error_condition": "ADR.md write permission denied",
+      "recovery_action": "Retry with elevated permissions",
+      "escalation": "Store entry in temp file for manual addition"
+    },
+    {
+      "error_condition": "Status Fragment exceeds 500 token limit",
+      "recovery_action": "Truncate to essential decisions",
+      "escalation": "Log full fragment to separate debug file"
+    }
+  ]
+}

@@ -1,0 +1,192 @@
+{
+  "id": "SFLOW-007",
+  "name": "File Watcher Event Chain",
+  "description": "Low-level system flow for filesystem monitoring and event propagation from agent writes to UI updates.",
+  "components": ["agent", "filesystem", "inotify", "watcher_process", "event_emitter", "socket_io", "browser"],
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Agent opens file for writing",
+      "component": "agent",
+      "inputs": ["file_path", "content"],
+      "outputs": ["file_descriptor"],
+      "data_flow": ["syscall_open"],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Agent writes content to file",
+      "component": "filesystem",
+      "inputs": ["file_descriptor", "content"],
+      "outputs": ["bytes_written"],
+      "data_flow": ["syscall_write"],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Agent closes file descriptor",
+      "component": "agent",
+      "inputs": ["file_descriptor"],
+      "outputs": ["close_complete"],
+      "data_flow": ["syscall_close"],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Kernel emits inotify IN_CLOSE_WRITE event",
+      "component": "inotify",
+      "inputs": ["file_change"],
+      "outputs": ["inotify_event"],
+      "data_flow": ["kernel_event"],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Node.js fs.watch callback triggered",
+      "component": "watcher_process",
+      "inputs": ["inotify_event"],
+      "outputs": ["watch_callback"],
+      "data_flow": ["libuv_event"],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Watcher debounces rapid changes (50ms)",
+      "component": "watcher_process",
+      "inputs": ["watch_callback"],
+      "outputs": ["debounced_event"],
+      "data_flow": ["timeout_set"],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Watcher reads file content",
+      "component": "filesystem",
+      "inputs": ["file_path"],
+      "outputs": ["file_content"],
+      "data_flow": ["syscall_read"],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Watcher validates JSON syntax",
+      "component": "watcher_process",
+      "inputs": ["file_content"],
+      "outputs": ["parsed_json OR parse_error"],
+      "data_flow": ["json_parse"],
+      "next_steps": ["STEP-009", "STEP-010"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "If parse error: Wait and retry",
+      "component": "watcher_process",
+      "inputs": ["parse_error"],
+      "outputs": ["retry_scheduled"],
+      "data_flow": ["timeout_set"],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Watcher emits internal event",
+      "component": "event_emitter",
+      "inputs": ["parsed_json"],
+      "outputs": ["internal_event"],
+      "data_flow": ["eventemitter_emit"],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Socket.io broadcasts to connected clients",
+      "component": "socket_io",
+      "inputs": ["internal_event"],
+      "outputs": ["websocket_frames"],
+      "data_flow": ["socket_broadcast"],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "Browser receives WebSocket message",
+      "component": "browser",
+      "inputs": ["websocket_frame"],
+      "outputs": ["javascript_event"],
+      "data_flow": ["websocket_onmessage"],
+      "next_steps": ["STEP-013"]
+    },
+    {
+      "id": "STEP-013",
+      "sequence": 13,
+      "action": "JavaScript updates DOM",
+      "component": "browser",
+      "inputs": ["javascript_event"],
+      "outputs": ["dom_mutation"],
+      "data_flow": ["dom_api"],
+      "next_steps": []
+    }
+  ],
+  "data_flow": [
+    {
+      "source": "agent",
+      "target": "filesystem",
+      "data": "file content",
+      "protocol": "syscall"
+    },
+    {
+      "source": "filesystem",
+      "target": "inotify",
+      "data": "change event",
+      "protocol": "kernel_notification"
+    },
+    {
+      "source": "inotify",
+      "target": "watcher_process",
+      "data": "event descriptor",
+      "protocol": "libuv"
+    },
+    {
+      "source": "watcher_process",
+      "target": "socket_io",
+      "data": "parsed data",
+      "protocol": "function_call"
+    },
+    {
+      "source": "socket_io",
+      "target": "browser",
+      "data": "JSON payload",
+      "protocol": "websocket"
+    }
+  ],
+  "error_handling": [
+    {
+      "component": "inotify",
+      "error": "watch_limit_exceeded",
+      "recovery": "fall back to polling"
+    },
+    {
+      "component": "watcher_process",
+      "error": "json_parse_error",
+      "recovery": "retry after 50ms debounce"
+    },
+    {
+      "component": "socket_io",
+      "error": "socket_error",
+      "recovery": "reconnect with backoff"
+    },
+    {
+      "component": "browser",
+      "error": "websocket_close",
+      "recovery": "auto-reconnect"
+    }
+  ]
+}

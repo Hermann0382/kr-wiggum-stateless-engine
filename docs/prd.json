@@ -1,0 +1,773 @@
+{
+  "artifact_type": "prd",
+  "status": "complete",
+  "validation": "passed",
+  "approval_required": true,
+  "approvers": ["Cynthia", "Hermann", "Usama"],
+  "next_phase": "flow_design",
+  "data": {
+    "project_name": "KR-Wiggum Stateless Engine",
+    "owner_email": "hermann@kreativreason.com",
+    "created_at": "2026-01-11T22:30:00Z",
+    "version": "2026.1.0",
+    "executive_summary": "An autonomous AI-driven software development pipeline that transforms raw brainstorms into production-ready software using stateless, self-correcting agents immune to context rot. The system operates at approximately $10.42/hour with hierarchical management (Supervisor-Worker pattern), file-based state management, and real-time HTML dashboard telemetry.",
+    "features": [
+      {
+        "id": "FR-001",
+        "title": "The Distiller - Brainstorm to Specification Converter",
+        "description": "Converts raw brainstorms, transcripts, and chat logs into structured PRD, ARCHITECTURE, and ROADMAP artifacts. Performs deep analysis using RipGrep (minimum 15 searches) to identify existing patterns and ensure atomic task breakdown.",
+        "priority": "high",
+        "user_stories": [
+          {
+            "id": "ST-001",
+            "title": "Brainstorm File Intake",
+            "description": "As a project engineer, I want to paste raw interview transcripts or chat logs into a designated file so that the system can extract functional requirements automatically.",
+            "acceptance_criteria": [
+              "System reads from .agent/01_raw_brainstorm.txt",
+              "Identifies 'Voice of Client' (requirements) vs 'Voice of Engineer' (constraints)",
+              "Filters conversational noise and extracts core requirements",
+              "Outputs structured data within 60 seconds for files under 50KB"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-002",
+            "title": "PRD Generation",
+            "description": "As a project engineer, I want the Distiller to generate a comprehensive PRD from my brainstorm so that all stakeholders have a clear source of truth.",
+            "acceptance_criteria": [
+              "Generates specs/PRD.md with User Stories, Business Logic, Success Criteria",
+              "PRD is immutable after generation (versioned changes only)",
+              "Includes all functional requirements extracted from brainstorm",
+              "Format follows KreativReason documentation standards"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-003",
+            "title": "Specification Index (PIN) Generation",
+            "description": "As a Worker agent, I want a keyword-rich index file so that I can quickly locate relevant code and specifications using RipGrep.",
+            "acceptance_criteria": [
+              "Generates specs/index.md with project keywords",
+              "Keywords enable accurate RipGrep searches for subsequent Workers",
+              "Index references all specs files and source code locations",
+              "Updated automatically when specs change"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-004",
+            "title": "Atomic Task Breakdown",
+            "description": "As a Shift Manager, I want the implementation plan broken into atomic tasks so that each Worker can complete one task within the Smart Zone (<40% context).",
+            "acceptance_criteria": [
+              "Each task completable in 15-30 minute window",
+              "Tasks edit no more than 3-5 files or 150 lines of code",
+              "Tasks ordered by dependency (DB Schema -> Types -> Services -> API -> UI)",
+              "Each task includes specific verification command (e.g., npm test)",
+              "Each task references relevant KreativReason guide"
+            ],
+            "priority": "high"
+          }
+        ]
+      },
+      {
+        "id": "FR-002",
+        "title": "The Shift Manager - Strategic Oversight Controller",
+        "description": "A supervisor agent that maintains project strategy, manages the roadmap, and oversees stateless Workers. Self-monitors token usage and rotates at 60% context threshold to prevent cognitive decay.",
+        "priority": "high",
+        "user_stories": [
+          {
+            "id": "ST-005",
+            "title": "Context Window Monitoring",
+            "description": "As a Shift Manager, I want to monitor my own token usage so that I can rotate before entering the Dumb Zone (>60% context).",
+            "acceptance_criteria": [
+              "Calculates context_fill_percent as (total_tokens / 200000) * 100",
+              "Triggers shift rotation when context exceeds 60%",
+              "Writes SHIFT_HANDOFF.md before termination",
+              "Exits with code 10 for rotation, code 0 for completion"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-006",
+            "title": "Worker Task Assignment",
+            "description": "As a Shift Manager, I want to assign atomic tasks to Workers with minimal context injection so that they remain in the Smart Zone.",
+            "acceptance_criteria": [
+              "Selects next unchecked task from IMPLEMENTATION_PLAN.md",
+              "Provides Worker with only: Mission, Guardrails paths, Back Pressure requirement",
+              "Does not inject raw code into Worker context",
+              "Monitors Worker terminal output without intervention"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-007",
+            "title": "ADR (Architectural Decision Record) Management",
+            "description": "As a Shift Manager, I want to log architectural decisions from Worker outputs so that project history is preserved across agent lifetimes.",
+            "acceptance_criteria": [
+              "Reads Worker 'Status Fragment' after task completion",
+              "Distills decisions into .agent/ADR.md entries",
+              "Links each ADR entry to specific commit hash",
+              "Preserves 'why' not just 'what' for each decision"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-008",
+            "title": "Shift Handoff Protocol",
+            "description": "As a successor Shift Manager, I want to read a handoff document so that I can resume the roadmap without context loss.",
+            "acceptance_criteria": [
+              "SHIFT_HANDOFF.md contains: Accomplishments, Architecture Delta, Blockers",
+              "Summarizes last 5 ADR entries",
+              "Verifies IMPLEMENTATION_PLAN.md accuracy before handoff",
+              "New Manager resumes from exact roadmap position"
+            ],
+            "priority": "high"
+          }
+        ]
+      },
+      {
+        "id": "FR-003",
+        "title": "The Stateless Worker - Atomic Task Executor",
+        "description": "A disposable agent that implements one atomic task using the Ralph Wiggum Loop (Edit -> LLVM Build -> Test -> Error Feedback), then terminates with zero memory retention.",
+        "priority": "high",
+        "user_stories": [
+          {
+            "id": "ST-009",
+            "title": "Fresh Context Boot",
+            "description": "As a Worker, I want to start with a 0-token clean context so that I am immune to cognitive debt from previous sessions.",
+            "acceptance_criteria": [
+              "Worker starts with empty context window",
+              "Receives only: PRD.md, current_task.md from Manager",
+              "No access to previous Worker outputs or logs",
+              "Initial context fill approximately 5-10% after injection"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-010",
+            "title": "Ralph Wiggum Loop Execution",
+            "description": "As a Worker, I want to iterate through Edit -> Build -> Test -> Fix cycles so that my code is verified before commit.",
+            "acceptance_criteria": [
+              "Executes code edits based on task specification",
+              "Runs LLVM/compiler after each edit",
+              "Runs unit tests after successful compilation",
+              "Loops until all tests pass (exit code 0)",
+              "Maximum 5 retry attempts before escalation"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-011",
+            "title": "Status Fragment Generation",
+            "description": "As a Worker, I want to generate a status fragment before termination so that the Manager can log my decisions.",
+            "acceptance_criteria": [
+              "Documents: What was fixed, What was changed, What patterns used",
+              "Written to temp file for Manager consumption",
+              "Includes specific file paths and line numbers modified",
+              "Compact format (<500 tokens)"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-012",
+            "title": "Self-Destruct Protocol",
+            "description": "As a Worker, I want to terminate immediately after task completion so that my context is garbage collected.",
+            "acceptance_criteria": [
+              "Process killed after successful commit",
+              "Memory cleared completely",
+              "No state persists to next Worker instance",
+              "Telemetry JSON reset to 0% context"
+            ],
+            "priority": "high"
+          }
+        ]
+      },
+      {
+        "id": "FR-004",
+        "title": "The Guardrail System - Back Pressure Enforcement",
+        "description": "Continuous quality control using LLVM/Static analysis, linting, and test suites that act as 'friction' to prevent bad code from being committed.",
+        "priority": "high",
+        "user_stories": [
+          {
+            "id": "ST-013",
+            "title": "Compiler/LLVM Verification",
+            "description": "As the system, I want to require LLVM/compiler exit code 0 so that only syntactically correct code is committed.",
+            "acceptance_criteria": [
+              "No commit allowed unless compiler passes",
+              "Error output captured to LAST_COMPILER_ERROR.log",
+              "Fresh Workers can read error log to fix issues",
+              "TypeScript tsc included in verification chain"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-014",
+            "title": "Unit Test Gate",
+            "description": "As the system, I want to require all unit tests to pass so that regression is prevented.",
+            "acceptance_criteria": [
+              "Task completion requires passing tests",
+              "Test output handled by sub-agents to prevent context bloat",
+              "Target >90% coverage for Services, >80% for Controllers",
+              "Test results logged for Manager review"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-015",
+            "title": "KreativReason Standards Enforcement",
+            "description": "As the system, I want to enforce KreativReason critical rules so that code quality remains production-grade.",
+            "acceptance_criteria": [
+              "Multi-tenancy: Every Prisma query includes tenantId",
+              "Validation: All input validated with Zod schemas",
+              "Exports: Only named exports (no export default)",
+              "Automated RipGrep audits for rule violations"
+            ],
+            "priority": "high"
+          }
+        ]
+      },
+      {
+        "id": "FR-005",
+        "title": "The Orchestrator - Process Lifecycle Manager",
+        "description": "A bash/Node.js script that manages launching, killing, and Shift Handoff detection between Manager and Worker instances.",
+        "priority": "high",
+        "user_stories": [
+          {
+            "id": "ST-016",
+            "title": "Shift Manager Lifecycle",
+            "description": "As the Orchestrator, I want to manage Manager instance lifecycles so that rotation happens automatically at 60% context.",
+            "acceptance_criteria": [
+              "Launches fresh Manager with HANDOFF_FILE if exists",
+              "Monitors exit codes: 0=complete, 10=rotate, other=error",
+              "Kills and restarts Manager on rotation signal",
+              "Maintains loop until roadmap 100% complete"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-017",
+            "title": "Worker Spawning",
+            "description": "As the Orchestrator, I want to spawn stateless Workers so that each task gets a fresh context.",
+            "acceptance_criteria": [
+              "Spawns new Claude Code instance for each task",
+              "Passes only minimal context injection",
+              "Kills Worker process after task completion",
+              "Resets telemetry.json to 0% after Worker death"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-018",
+            "title": "Error Recovery",
+            "description": "As the Orchestrator, I want to handle unexpected crashes so that the pipeline can resume.",
+            "acceptance_criteria": [
+              "Detects non-standard exit codes",
+              "Implements 5-second sleep before retry",
+              "Logs crash information for debugging",
+              "Maximum 3 consecutive crash retries before halt"
+            ],
+            "priority": "medium"
+          }
+        ]
+      },
+      {
+        "id": "FR-006",
+        "title": "File-Based State Management",
+        "description": "Persistent memory system using markdown files as the 'brain outside the AI' to maintain coherence across stateless agent lifetimes.",
+        "priority": "high",
+        "user_stories": [
+          {
+            "id": "ST-019",
+            "title": "IMPLEMENTATION_PLAN.md Management",
+            "description": "As the system, I want a checklist-based roadmap so that Workers and Managers can track progress.",
+            "acceptance_criteria": [
+              "Uses [ ] and [x] checkbox syntax for task status",
+              "Tasks ordered by dependency",
+              "Each task has unique ID (e.g., ST-01, ST-02)",
+              "Progress calculable via regex matching"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-020",
+            "title": "ADR.md Persistence",
+            "description": "As a successor agent, I want to read architectural decisions so that I understand why patterns were chosen.",
+            "acceptance_criteria": [
+              "Chronological log of architectural decisions",
+              "Each entry links to commit hash and task ID",
+              "Includes rationale, not just description",
+              "Searchable via RipGrep keywords"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-021",
+            "title": "LAST_COMPILER_ERROR.log Bridge",
+            "description": "As a fresh Worker, I want to read the last compiler error so that I can fix the specific issue without context history.",
+            "acceptance_criteria": [
+              "Contains most recent LLVM/compiler error output",
+              "Truncated to essential error information (<1000 tokens)",
+              "Cleared after successful compilation",
+              "Enables recovery from failed previous attempts"
+            ],
+            "priority": "high"
+          }
+        ]
+      },
+      {
+        "id": "FR-007",
+        "title": "HTML Dashboard - Real-Time Mission Control",
+        "description": "A 'neon-liquid' industrial terminal UI providing real-time visibility into context health, task velocity, and pipeline progress.",
+        "priority": "high",
+        "user_stories": [
+          {
+            "id": "ST-022",
+            "title": "Context Window Progress Bars",
+            "description": "As a human engineer, I want to see moving percentage bars for Manager and Worker context so that I can spot context rot visually.",
+            "acceptance_criteria": [
+              "Manager bar: steady growth, blue/cyan in Smart Zone",
+              "Worker bar: pulsing heartbeat, resets to 0% on task completion",
+              "Color states: Blue (<40%), Orange (40-60%), Red (>60%)",
+              "Smooth CSS transitions with 'neon-liquid' aesthetic"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-023",
+            "title": "Roadmap Progress Visualization",
+            "description": "As a human engineer, I want to see overall project completion so that I know how far the autonomous run has progressed.",
+            "acceptance_criteria": [
+              "Shows completed/total tasks ratio",
+              "Visual progress bar for overall completion",
+              "Displays current active task title",
+              "Shows last successful task with commit hash"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-024",
+            "title": "Cost Tracking Display",
+            "description": "As a human engineer, I want to see the accumulated cost so that I can monitor ROI of the autonomous run.",
+            "acceptance_criteria": [
+              "Displays running cost at $10.42/hour rate",
+              "Shows tasks per hour velocity",
+              "Budget warning at configurable threshold",
+              "Total cost accumulated since loop start"
+            ],
+            "priority": "medium"
+          },
+          {
+            "id": "ST-025",
+            "title": "Guardrail Status Panel",
+            "description": "As a human engineer, I want to see back pressure check results so that I know if quality gates are passing.",
+            "acceptance_criteria": [
+              "Shows TypeScript (tsc) status",
+              "Shows Multi-tenancy audit status",
+              "Shows test coverage percentage",
+              "Red/green indicators for pass/fail"
+            ],
+            "priority": "medium"
+          }
+        ]
+      },
+      {
+        "id": "FR-008",
+        "title": "Node.js Watcher - WebSocket Bridge",
+        "description": "A real-time bridge between the CLI-based agents (writing to disk) and the HTML Dashboard (displaying state) using Socket.io.",
+        "priority": "high",
+        "user_stories": [
+          {
+            "id": "ST-026",
+            "title": "Telemetry File Watcher",
+            "description": "As the Watcher, I want to monitor telemetry.json changes so that I can push updates to the frontend instantly.",
+            "acceptance_criteria": [
+              "Uses fs.watch for .ralph/telemetry.json",
+              "Parses JSON and emits 'telemetry' event via Socket.io",
+              "Handles partial/empty file writes gracefully",
+              "Sub-100ms latency from file change to UI update"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-027",
+            "title": "Roadmap Progress Watcher",
+            "description": "As the Watcher, I want to monitor IMPLEMENTATION_PLAN.md so that I can calculate and broadcast progress.",
+            "acceptance_criteria": [
+              "Uses fs.watchFile for roadmap changes",
+              "Counts [x] vs [ ] checkboxes",
+              "Emits 'roadmap' event with progress percentage",
+              "Updates frontend on every checkbox change"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-028",
+            "title": "Static File Serving",
+            "description": "As the Watcher, I want to serve the HTML/CSS/JS frontend so that users can access the dashboard.",
+            "acceptance_criteria": [
+              "Express serves /public directory",
+              "Dashboard accessible at http://localhost:3000",
+              "Supports multiple concurrent browser connections",
+              "Graceful handling of disconnects/reconnects"
+            ],
+            "priority": "high"
+          }
+        ]
+      },
+      {
+        "id": "FR-009",
+        "title": "Crisis Mode - Emergency Override System",
+        "description": "A manual override capability that immediately terminates all processes and reverts code to the last known good state.",
+        "priority": "high",
+        "user_stories": [
+          {
+            "id": "ST-029",
+            "title": "Crisis Button Trigger",
+            "description": "As a human engineer, I want a prominent Crisis Mode button so that I can stop hallucination spirals immediately.",
+            "acceptance_criteria": [
+              "Red button with 'neon-liquid' warning glow",
+              "Single click triggers crisis protocol",
+              "Confirmation not required (immediate action)",
+              "Visual feedback on activation"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-030",
+            "title": "Process Termination",
+            "description": "As Crisis Mode, I want to kill all AI processes so that token burn stops immediately.",
+            "acceptance_criteria": [
+              "Executes pkill -f orchestrate.sh",
+              "Executes pkill -f claude-code",
+              "Terminates within 2 seconds of button click",
+              "Logs termination for debugging"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-031",
+            "title": "Git Hard Reset",
+            "description": "As Crisis Mode, I want to revert to the last commit so that bad code is removed.",
+            "acceptance_criteria": [
+              "Executes git reset --hard HEAD",
+              "Clears any uncommitted changes",
+              "Preserves git history for forensics",
+              "Confirms revert success to frontend"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-032",
+            "title": "Telemetry Reset",
+            "description": "As Crisis Mode, I want to clear agent state so that the next run starts fresh.",
+            "acceptance_criteria": [
+              "Resets telemetry.json to 0% context",
+              "Dashboard bars return to zero",
+              "System message broadcasted to all connected clients",
+              "Ready for immediate loop restart"
+            ],
+            "priority": "high"
+          }
+        ]
+      },
+      {
+        "id": "FR-010",
+        "title": "Slash Command Interface",
+        "description": "Human-friendly CLI commands that abstract complex orchestration into simple intent-based actions.",
+        "priority": "high",
+        "user_stories": [
+          {
+            "id": "ST-033",
+            "title": "/...seed Command",
+            "description": "As a human engineer, I want to run /...seed @file so that my transcript is distilled into specifications.",
+            "acceptance_criteria": [
+              "Triggers Distiller prompt with linked file",
+              "Generates specs/PRD.md, specs/index.md",
+              "Creates initial IMPLEMENTATION_PLAN.md",
+              "Outputs success/failure status"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-034",
+            "title": "/...plan Command",
+            "description": "As a human engineer, I want to run /...plan so that the roadmap is updated based on current code state.",
+            "acceptance_criteria": [
+              "Analyzes gap between specs and code",
+              "Updates IMPLEMENTATION_PLAN.md",
+              "Orders tasks by dependency",
+              "Reports number of tasks generated"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-035",
+            "title": "/...loop Command",
+            "description": "As a human engineer, I want to run /...loop so that autonomous implementation begins.",
+            "acceptance_criteria": [
+              "Starts orchestrate.sh in background",
+              "Activates Shift Manager",
+              "Begins Worker cycling",
+              "Dashboard starts receiving telemetry"
+            ],
+            "priority": "high"
+          },
+          {
+            "id": "ST-036",
+            "title": "/...status Command",
+            "description": "As a human engineer, I want to run /...status so that I can check progress from terminal.",
+            "acceptance_criteria": [
+              "Renders DASHBOARD.md in terminal-friendly format",
+              "Shows context percentages",
+              "Shows completed/total tasks",
+              "Shows latest ADR entry"
+            ],
+            "priority": "medium"
+          },
+          {
+            "id": "ST-037",
+            "title": "/...digest Command",
+            "description": "As a human engineer, I want to run /...digest so that messy brainstorm pastes are organized without rigid structure.",
+            "acceptance_criteria": [
+              "Handles unstructured copy-paste input",
+              "Identifies core logic from 'brain dump'",
+              "Proposes 5-10 atomic tasks",
+              "Creates specs/concepts.md for 'vibe' capture"
+            ],
+            "priority": "medium"
+          }
+        ]
+      },
+      {
+        "id": "FR-011",
+        "title": "Shift Report Generation",
+        "description": "End-of-shift documentation that compresses work done into high-density summaries for successor Managers.",
+        "priority": "medium",
+        "user_stories": [
+          {
+            "id": "ST-038",
+            "title": "Shift Report Template",
+            "description": "As a Shift Manager, I want to generate a structured shift report so that my successor has complete context.",
+            "acceptance_criteria": [
+              "Includes: Executive Summary, Completed Tasks, Strategic Memory",
+              "Lists architectural decisions made during shift",
+              "Identifies persistent friction points",
+              "Links to current roadmap position"
+            ],
+            "priority": "medium"
+          },
+          {
+            "id": "ST-039",
+            "title": "Definition of Done Verification",
+            "description": "As a Shift Manager, I want to verify completion criteria before closing shift so that quality is maintained.",
+            "acceptance_criteria": [
+              "Confirms LLVM/Compiler signal pass",
+              "Confirms KreativReason standards compliance",
+              "Confirms all unit tests pass",
+              "Documents any known issues or TODOs"
+            ],
+            "priority": "medium"
+          }
+        ]
+      },
+      {
+        "id": "FR-012",
+        "title": "Post-Crisis Recovery Analysis",
+        "description": "Forensic analysis system that identifies failure causes after Crisis Mode activation to prevent repeat failures.",
+        "priority": "medium",
+        "user_stories": [
+          {
+            "id": "ST-040",
+            "title": "Forensic Log Analysis",
+            "description": "As a recovery agent, I want to analyze logs leading to crisis so that I can identify the root cause.",
+            "acceptance_criteria": [
+              "Reads activity.log and LAST_COMPILER_ERROR.log",
+              "Identifies trigger: vague spec, rule violation, or test gap",
+              "Checks if context fill exceeded 60% before failure",
+              "Documents specific file causing token spike"
+            ],
+            "priority": "medium"
+          },
+          {
+            "id": "ST-041",
+            "title": "Specification Refinement",
+            "description": "As a recovery agent, I want to update specs to prevent repeat failures so that future Workers have better 'rails'.",
+            "acceptance_criteria": [
+              "Clarifies ambiguous logic in relevant spec file",
+              "Splits complex task into smaller Units-of-Work",
+              "Proposes new test or lint rule for early detection",
+              "Updates ADR.md with failure analysis"
+            ],
+            "priority": "medium"
+          }
+        ]
+      },
+      {
+        "id": "FR-013",
+        "title": "Final Deployment and Client Handoff",
+        "description": "End-of-project documentation and deployment automation using accumulated Shift Reports and ADR entries.",
+        "priority": "medium",
+        "user_stories": [
+          {
+            "id": "ST-042",
+            "title": "Final Sanity Check",
+            "description": "As the Final Manager, I want to perform comprehensive audits before deployment so that the application is production-ready.",
+            "acceptance_criteria": [
+              "Global RipGrep for tenantId in all Prisma queries",
+              "Zod validation presence on all API endpoints",
+              "Named export verification (no export default)",
+              "N+1 query detection in Service layer"
+            ],
+            "priority": "medium"
+          },
+          {
+            "id": "ST-043",
+            "title": "Client Documentation Generation",
+            "description": "As the system, I want to generate README_CLIENT.md so that the client has professional handoff documentation.",
+            "acceptance_criteria": [
+              "Synthesizes all SHIFT_REPORT.md files",
+              "Extracts decisions from ADR.md",
+              "Confirms 100% feature coverage against PRD.md",
+              "Includes deployment and maintenance instructions"
+            ],
+            "priority": "medium"
+          }
+        ]
+      }
+    ],
+    "technical_requirements": {
+      "performance": {
+        "worker_task_completion": "15-30 minutes per atomic task",
+        "context_smart_zone": "Worker <40%, Manager <60% context fill",
+        "telemetry_latency": "<100ms from file change to UI update",
+        "crisis_response_time": "<2 seconds from button click to process termination",
+        "websocket_update_frequency": "Real-time on file change events",
+        "cost_target": "$10.42/hour autonomous operation"
+      },
+      "security": {
+        "no_sensitive_data_in_context": "Credentials and secrets never injected into agent context",
+        "git_history_preservation": "Crisis mode preserves git history for forensics",
+        "process_isolation": "Workers have no access to previous Worker state",
+        "input_validation": "All API inputs validated with Zod schemas",
+        "multi_tenancy": "Every database query must include tenantId"
+      },
+      "scalability": {
+        "concurrent_dashboard_clients": "Multiple browser connections supported",
+        "roadmap_task_limit": "Supports 100+ atomic tasks per project",
+        "shift_rotation": "Unlimited Manager rotations until project completion",
+        "file_watcher_efficiency": "Efficient fs.watch for large directories"
+      },
+      "compatibility": {
+        "runtime": "Node.js 18+ LTS",
+        "ai_cli": "Claude Code CLI (claude-code command)",
+        "browser_support": "Chrome, Firefox, Safari (modern versions)",
+        "os_support": "macOS, Linux (bash-compatible)",
+        "websocket_library": "Socket.io for real-time communication",
+        "web_framework": "Express.js for static file serving"
+      }
+    },
+    "dependencies": [
+      {
+        "name": "Claude Code CLI",
+        "version": "latest",
+        "purpose": "AI agent execution environment"
+      },
+      {
+        "name": "Node.js",
+        "version": ">=18.0.0",
+        "purpose": "Watcher server and WebSocket bridge"
+      },
+      {
+        "name": "Express.js",
+        "version": "^4.18.0",
+        "purpose": "HTTP server for dashboard"
+      },
+      {
+        "name": "Socket.io",
+        "version": "^4.6.0",
+        "purpose": "Real-time WebSocket communication"
+      },
+      {
+        "name": "TypeScript",
+        "version": "^5.0.0",
+        "purpose": "Type checking for back pressure"
+      },
+      {
+        "name": "Vitest or Jest",
+        "version": "latest",
+        "purpose": "Unit test framework"
+      },
+      {
+        "name": "Prisma",
+        "version": "^5.0.0",
+        "purpose": "Database ORM with tenantId enforcement"
+      },
+      {
+        "name": "Zod",
+        "version": "^3.22.0",
+        "purpose": "Schema validation for inputs"
+      },
+      {
+        "name": "RipGrep",
+        "version": "latest",
+        "purpose": "Fast code search for PIN-based navigation"
+      }
+    ],
+    "assumptions": [
+      "Claude Code CLI is pre-authenticated and ready for headless execution",
+      "Users have bash-compatible shell environment (macOS/Linux)",
+      "KreativReason documentation guides are available in /docs folder",
+      "Git repository is initialized with proper .gitignore",
+      "Node.js and npm are installed on the development machine",
+      "Context window size is approximately 200,000 tokens",
+      "Internet connectivity available for AI API calls"
+    ],
+    "constraints": [
+      "Workers must be stateless - no memory retention between tasks",
+      "Manager must rotate at 60% context threshold to prevent Dumb Zone",
+      "All code must pass LLVM/compiler and unit tests before commit",
+      "Tasks must be atomic enough to complete in <40% context window",
+      "No export default - only named exports per KreativReason standards",
+      "Every Prisma query must include tenantId for multi-tenancy",
+      "System operates autonomously but requires human for Crisis intervention"
+    ],
+    "design_preferences": {
+      "preset": "creative",
+      "preset_rationale": "This is a developer-focused, innovative tooling project that pushes boundaries in AI-assisted development. The 'neon-liquid industrial terminal' aesthetic mentioned in the brainstorm suggests a modern, cutting-edge visual style that aligns with the creative preset. The project targets developers who value innovation and modern design.",
+      "custom_colors": {
+        "primary": "#00d2ff",
+        "secondary": "#0d1117",
+        "accent": ["#ff4b2b", "#f9826c", "#00d2ff"]
+      },
+      "style_notes": [
+        "Industrial terminal aesthetic with monospace fonts (Fira Code)",
+        "Dark mode by default with high contrast",
+        "Neon glow effects on progress bars and buttons",
+        "'Neon-liquid' smooth CSS transitions",
+        "Color coding for system health: Blue (Smart Zone), Orange (Degrading), Red (Dumb Zone/Crisis)",
+        "GitHub-inspired dark theme (#0d1117 background, #161b22 panels)",
+        "Mission Control / HUD visual metaphor"
+      ],
+      "target_audience": "Software engineers and technical leads who want to automate AI-assisted development while maintaining full visibility and control over the autonomous process",
+      "brand_guidelines_provided": false,
+      "dark_mode_required": true,
+      "accessibility_requirements": [
+        "High contrast color scheme for visibility",
+        "Keyboard navigation support for Crisis button",
+        "Screen reader compatible status announcements"
+      ]
+    },
+    "glossary": {
+      "Smart Zone": "Context fill <40% where AI reasoning is sharpest",
+      "Dumb Zone": "Context fill >60% where cognitive decay occurs",
+      "Ralph Wiggum Loop": "Iterative cycle: Edit -> Build -> Test -> Fix until success",
+      "Back Pressure": "Quality gates (LLVM, tests, linting) that prevent bad commits",
+      "Shift Rotation": "Manager replacement at 60% context to prevent context rot",
+      "Status Fragment": "Compact summary written by Worker before termination",
+      "PIN (Specification Index)": "Keyword-rich index for RipGrep search optimization",
+      "ADR (Architectural Decision Record)": "Log of why patterns/libraries were chosen",
+      "Unit of Work": "Atomic task completable by one Worker in one loop",
+      "Context Rot": "Degraded reasoning due to accumulated context pollution"
+    }
+  }
+}

@@ -1,0 +1,176 @@
+{
+  "id": "SFLOW-008",
+  "name": "Error Recovery Chain",
+  "description": "System flow for handling errors across the pipeline including retries, escalation, and recovery procedures.",
+  "components": ["orchestrator", "shift_manager", "worker", "guardrails", "filesystem", "telemetry"],
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Error detected in pipeline component",
+      "component": "orchestrator",
+      "inputs": ["error_signal", "exit_code"],
+      "outputs": ["error_classification"],
+      "data_flow": ["signal_capture"],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Classify error type: transient vs persistent",
+      "component": "orchestrator",
+      "inputs": ["error_classification"],
+      "outputs": ["recovery_strategy"],
+      "data_flow": ["decision_logic"],
+      "next_steps": ["STEP-003", "STEP-007"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "TRANSIENT: Implement 5-second sleep delay",
+      "component": "orchestrator",
+      "inputs": ["recovery_strategy = retry"],
+      "outputs": ["delay_complete"],
+      "data_flow": ["sleep"],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Increment retry counter",
+      "component": "orchestrator",
+      "inputs": ["retry_count"],
+      "outputs": ["new_retry_count"],
+      "data_flow": ["counter_increment"],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Check if retry limit reached (max 3)",
+      "component": "orchestrator",
+      "inputs": ["new_retry_count"],
+      "outputs": ["can_retry OR escalate"],
+      "data_flow": ["comparison"],
+      "next_steps": ["STEP-006", "STEP-007"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Restart failed component",
+      "component": "orchestrator",
+      "inputs": ["component_id", "restart_args"],
+      "outputs": ["new_process"],
+      "data_flow": ["process_spawn"],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "PERSISTENT: Log crash information",
+      "component": "filesystem",
+      "inputs": ["error_details", "stack_trace"],
+      "outputs": ["crash.log"],
+      "data_flow": ["filesystem_append"],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Capture last known good state",
+      "component": "filesystem",
+      "inputs": ["IMPLEMENTATION_PLAN.md", "ADR.md"],
+      "outputs": ["state_snapshot"],
+      "data_flow": ["filesystem_read"],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Update telemetry with error status",
+      "component": "telemetry",
+      "inputs": ["error_status"],
+      "outputs": ["telemetry.json updated"],
+      "data_flow": ["filesystem_write"],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Broadcast error to dashboard",
+      "component": "telemetry",
+      "inputs": ["error_notification"],
+      "outputs": ["websocket_broadcast"],
+      "data_flow": ["socket_emit"],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Halt pipeline and await intervention",
+      "component": "orchestrator",
+      "inputs": ["halt_signal"],
+      "outputs": ["pipeline_halted"],
+      "data_flow": ["state_set"],
+      "next_steps": []
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "Reset retry counter on success",
+      "component": "orchestrator",
+      "inputs": ["success_signal"],
+      "outputs": ["retry_count = 0"],
+      "data_flow": ["counter_reset"],
+      "next_steps": []
+    }
+  ],
+  "data_flow": [
+    {
+      "source": "failed_component",
+      "target": "orchestrator",
+      "data": "error signal",
+      "protocol": "exit_code"
+    },
+    {
+      "source": "orchestrator",
+      "target": "filesystem",
+      "data": "crash log",
+      "protocol": "filesystem_write"
+    },
+    {
+      "source": "orchestrator",
+      "target": "telemetry",
+      "data": "error status",
+      "protocol": "json_write"
+    },
+    {
+      "source": "telemetry",
+      "target": "dashboard",
+      "data": "error notification",
+      "protocol": "websocket"
+    }
+  ],
+  "error_handling": [
+    {
+      "component": "orchestrator",
+      "error": "spawner_failure",
+      "recovery": "log and halt immediately"
+    },
+    {
+      "component": "filesystem",
+      "error": "log_write_fail",
+      "recovery": "output to stderr"
+    },
+    {
+      "component": "telemetry",
+      "error": "broadcast_fail",
+      "recovery": "continue recovery without dashboard update"
+    },
+    {
+      "component": "orchestrator",
+      "error": "state_corruption",
+      "recovery": "trigger crisis mode"
+    }
+  ]
+}

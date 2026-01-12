@@ -1,0 +1,1041 @@
+{
+  "artifact_type": "adr",
+  "scope": "project",
+  "status": "complete",
+  "validation": "passed",
+  "approval_required": true,
+  "approvers": ["Hermann", "Usama"],
+  "next_phase": "scaffolding",
+  "data": {
+    "project_name": "KR-Wiggum Stateless Engine",
+    "version": "2026.1.0",
+    "created_at": "2026-01-11T23:59:00Z",
+    "decisions": [
+      {
+        "id": "ADR-0001",
+        "title": "File-Based State Management ('Brain Outside the AI')",
+        "status": "accepted",
+        "date": "2026-01-11T23:59:00Z",
+        "author": "Claude Code (Pipeline Generator)",
+        "context": {
+          "description": "Stateless AI agents require persistent memory that survives process termination, context rotation, and crisis mode resets. Traditional databases add operational complexity and create coupling between agents and infrastructure. The system needs a state management approach that allows fresh agents to reconstruct project understanding from scratch.",
+          "requirements": [
+            "FR-006: File-Based State Management - persistent memory outside the AI",
+            "ST-019: IMPLEMENTATION_PLAN.md checklist-based roadmap tracking",
+            "ST-020: ADR.md persistence for architectural decision history",
+            "ST-021: LAST_COMPILER_ERROR.log bridge for error recovery"
+          ],
+          "constraints": [
+            "Workers must be stateless with no memory retention between tasks",
+            "Fresh agents must reconstruct context from files alone",
+            "State must survive Crisis Mode resets and process terminations",
+            "Version control compatibility required for audit trails"
+          ]
+        },
+        "decision": "Use markdown and JSON files as the 'brain outside the AI' instead of a traditional database. All project state including implementation plans, ADRs, telemetry, shift handoffs, and compiler errors are stored in human-readable files within .agent/, .ralph/, and specs/ directories.",
+        "alternatives": [
+          {
+            "option": "SQLite embedded database",
+            "pros": [
+              "ACID transactions ensure data consistency",
+              "Single file deployment like file-based approach",
+              "SQL query capabilities for complex state retrieval",
+              "Better concurrent access handling"
+            ],
+            "cons": [
+              "Binary format not human-readable or git-diffable",
+              "Requires schema migrations for structure changes",
+              "Adds complexity for simple key-value state operations",
+              "Not compatible with RipGrep pattern search strategy"
+            ],
+            "cost_estimate": "Free (embedded)"
+          },
+          {
+            "option": "Redis in-memory database",
+            "pros": [
+              "Sub-millisecond read/write performance",
+              "Pub/Sub for real-time telemetry updates",
+              "Built-in TTL for ephemeral state",
+              "Atomic operations for concurrent updates"
+            ],
+            "cons": [
+              "Requires separate server process",
+              "Memory-only without persistence configuration",
+              "Operational overhead for developers",
+              "Not version-controllable for state history"
+            ],
+            "cost_estimate": "Free (self-hosted) or $15-100/month (cloud)"
+          },
+          {
+            "option": "PostgreSQL relational database",
+            "pros": [
+              "Full ACID compliance with complex transactions",
+              "Advanced querying and indexing capabilities",
+              "Proven reliability at scale",
+              "Rich ecosystem of tools and ORMs"
+            ],
+            "cons": [
+              "Heavy operational overhead for local development",
+              "Requires connection management and pooling",
+              "Not portable between developer machines without setup",
+              "Overkill for single-user agent state management"
+            ],
+            "cost_estimate": "Free (self-hosted) or $25-500/month (cloud)"
+          }
+        ],
+        "rationale": "File-based state management aligns with the core philosophy of stateless agents: every agent starts fresh and reconstructs understanding from persistent files. Markdown files are human-readable, git-diffable, and compatible with the RipGrep search strategy used by Workers to locate relevant context. JSON files provide structured data with Zod validation. The .agent/ directory structure mirrors the ERD entities (ENT-001 through ENT-011) while remaining simple enough that any developer can inspect and modify state directly. This approach eliminates database infrastructure requirements, making the system portable across developer machines without setup friction.",
+        "consequences": {
+          "positive": [
+            "Human-readable state enables debugging without specialized tools",
+            "Git integration provides complete audit trail of state changes",
+            "RipGrep compatibility enables PIN-based navigation for Workers",
+            "Zero infrastructure dependencies for local development",
+            "Simple file operations avoid connection pooling complexity",
+            "Portable project state via simple directory copy"
+          ],
+          "negative": [
+            "No transaction support - concurrent writes may conflict",
+            "No query engine - state retrieval limited to file reads and regex",
+            "Manual checkpoint management for crash recovery",
+            "File watching required for real-time telemetry updates"
+          ],
+          "risks": [
+            "Concurrent access: Mitigated by single-agent-at-a-time execution model",
+            "Data corruption: Mitigated by atomic write operations and JSON validation",
+            "Performance at scale: Mitigated by task atomicity limits (100+ tasks supported)",
+            "Schema evolution: Mitigated by Zod validation with graceful defaults"
+          ]
+        },
+        "related_decisions": ["ADR-0009"],
+        "superseded_by": null,
+        "artifact_references": {
+          "features": ["FR-006"],
+          "entities": ["ENT-001", "ENT-002", "ENT-003", "ENT-004", "ENT-005", "ENT-006", "ENT-007", "ENT-008", "ENT-009", "ENT-010", "ENT-011"],
+          "tasks": ["TASK-003", "TASK-004", "TASK-005", "TASK-006", "TASK-007", "TASK-008", "TASK-009", "TASK-010", "TASK-011"],
+          "flows": ["FLOW-011"]
+        }
+      },
+      {
+        "id": "ADR-0002",
+        "title": "Hierarchical Stateless Architecture (Supervisor-Worker Pattern)",
+        "status": "accepted",
+        "date": "2026-01-11T23:59:00Z",
+        "author": "Claude Code (Pipeline Generator)",
+        "context": {
+          "description": "AI agents experience 'context rot' - degraded reasoning quality as context windows fill with accumulated information. Long-running single agents accumulate cognitive debt that reduces output quality. The system needs an architecture that maintains high reasoning quality across extended development sessions while preserving architectural coherence.",
+          "requirements": [
+            "FR-002: Shift Manager strategic oversight with context monitoring",
+            "FR-003: Stateless Worker atomic task execution",
+            "FR-005: Orchestrator process lifecycle management",
+            "ST-005: Context window monitoring at 60% threshold",
+            "ST-009: Fresh context boot for Workers"
+          ],
+          "constraints": [
+            "Context window approximately 200,000 tokens",
+            "Workers must complete tasks in <40% context (Smart Zone)",
+            "Managers must rotate at 60% context threshold",
+            "Unlimited rotation cycles until project completion"
+          ]
+        },
+        "decision": "Implement a hierarchical Supervisor-Worker pattern with three tiers: (1) Orchestrator shell script managing process lifecycles, (2) Shift Manager AI agent maintaining strategic oversight with 60% rotation threshold, and (3) Stateless Worker AI agents executing atomic tasks with complete memory wipe between tasks.",
+        "alternatives": [
+          {
+            "option": "Single long-running agent",
+            "pros": [
+              "Maintains full conversation history and context",
+              "No handoff overhead between agents",
+              "Simpler implementation without orchestration",
+              "Direct access to all accumulated knowledge"
+            ],
+            "cons": [
+              "Context rot degrades reasoning after ~60% fill",
+              "No recovery mechanism from hallucination spirals",
+              "Cannot maintain quality across 100+ task projects",
+              "Single point of failure for entire pipeline"
+            ],
+            "cost_estimate": "Same token cost, but quality degrades over time"
+          },
+          {
+            "option": "Pure Ralph Wiggum Loop (single Worker cycling)",
+            "pros": [
+              "Maximum statelessness - fresh context every task",
+              "Simplest orchestration logic",
+              "Predictable resource usage per task",
+              "Easy to reason about behavior"
+            ],
+            "cons": [
+              "No strategic oversight or architectural coherence",
+              "Cannot coordinate dependencies between tasks",
+              "No ADR management or decision logging",
+              "Drift without Manager course correction"
+            ],
+            "cost_estimate": "Lower per-task cost, but higher rework cost"
+          },
+          {
+            "option": "Multi-agent swarm (equal peers)",
+            "pros": [
+              "Parallel execution of independent tasks",
+              "No single point of coordination failure",
+              "Distributed decision making",
+              "Scales with available compute"
+            ],
+            "cons": [
+              "Coordination complexity for dependent tasks",
+              "Risk of conflicting architectural decisions",
+              "Merge conflicts from parallel file edits",
+              "Difficult to maintain consistent style"
+            ],
+            "cost_estimate": "Higher token cost from parallel execution"
+          }
+        ],
+        "rationale": "The Supervisor-Worker hierarchy balances context freshness with strategic coherence. Workers operate in the 'Smart Zone' (<40% context) where reasoning is sharpest, executing atomic tasks and self-destructing. The Shift Manager maintains roadmap position, logs ADRs, and provides course correction while rotating at 60% to avoid the 'Dumb Zone'. This separation ensures that strategic decisions are made by agents with full project understanding while implementation details are handled by fresh agents immune to accumulated confusion. The Orchestrator shell script provides reliable process management without consuming AI context.",
+        "consequences": {
+          "positive": [
+            "Workers always operate at peak cognitive performance",
+            "Manager provides architectural coherence across Worker lifecycles",
+            "Rotation prevents context rot while maintaining project knowledge",
+            "Clear separation of concerns between strategy and implementation",
+            "Unlimited scaling through rotation until completion"
+          ],
+          "negative": [
+            "Handoff overhead between Manager rotations",
+            "Complex orchestration logic in shell scripts",
+            "Status Fragment and Shift Handoff document generation overhead",
+            "Potential information loss during handoffs"
+          ],
+          "risks": [
+            "Handoff quality: Mitigated by structured SHIFT_HANDOFF.md template",
+            "Strategic drift: Mitigated by immutable PRD.md as source of truth",
+            "Coordination failures: Mitigated by file-based state synchronization",
+            "Manager context explosion: Mitigated by 60% hard rotation threshold"
+          ]
+        },
+        "related_decisions": ["ADR-0003", "ADR-0005"],
+        "superseded_by": null,
+        "artifact_references": {
+          "features": ["FR-002", "FR-003", "FR-005"],
+          "entities": ["ENT-007", "ENT-008", "ENT-010", "ENT-011"],
+          "tasks": ["TASK-012", "TASK-013", "TASK-014", "TASK-015", "TASK-016", "TASK-017", "TASK-018", "TASK-019", "TASK-020"],
+          "flows": ["FLOW-002", "FLOW-003", "FLOW-005", "FLOW-006", "FLOW-007", "FLOW-009", "FLOW-010"]
+        }
+      },
+      {
+        "id": "ADR-0003",
+        "title": "Context Zone Thresholds (40% Worker / 60% Manager)",
+        "status": "accepted",
+        "date": "2026-01-11T23:59:00Z",
+        "author": "Claude Code (Pipeline Generator)",
+        "context": {
+          "description": "Empirical observation shows AI reasoning quality degrades as context windows fill. The system needs quantitative thresholds to trigger Worker task completion and Manager rotation before cognitive decay impacts output quality. These thresholds must balance maximizing useful work per context window against maintaining reasoning quality.",
+          "requirements": [
+            "Performance requirement: Worker <40%, Manager <60% context fill",
+            "ST-005: Context window monitoring at 60% threshold",
+            "ST-009: Fresh context boot approximately 5-10% after injection",
+            "Glossary: Smart Zone <40%, Dumb Zone >60%"
+          ],
+          "constraints": [
+            "Context window approximately 200,000 tokens",
+            "Tasks must be atomic enough to complete in <40% context",
+            "Context calculation: (total_tokens / 200000) * 100"
+          ]
+        },
+        "decision": "Define three context zones with specific thresholds: Smart Zone (0-40% context fill) for Workers where reasoning is optimal, Degrading Zone (40-60%) as a buffer for Manager strategic work, and Dumb Zone (>60%) where cognitive decay makes output unreliable. Workers must complete and terminate before 40%. Managers must rotate at 60%.",
+        "alternatives": [
+          {
+            "option": "Fixed task count rotation (e.g., rotate every 10 tasks)",
+            "pros": [
+              "Simple to implement without token counting",
+              "Predictable rotation schedule",
+              "No API calls to check token usage",
+              "Easy to reason about lifecycle"
+            ],
+            "cons": [
+              "Task complexity varies widely",
+              "May rotate too early (wasted context) or too late (degraded quality)",
+              "Does not account for context injection size variations",
+              "No correlation with actual cognitive load"
+            ],
+            "cost_estimate": "May waste 20-30% context per cycle"
+          },
+          {
+            "option": "Time-based rotation (e.g., rotate every 30 minutes)",
+            "pros": [
+              "Predictable wall-clock scheduling",
+              "Simple timer implementation",
+              "Budget-friendly cost caps",
+              "Works regardless of token API availability"
+            ],
+            "cons": [
+              "No correlation with context fill or cognitive load",
+              "Different task speeds make time meaningless",
+              "May interrupt mid-task requiring recovery",
+              "Does not account for idle time vs active time"
+            ],
+            "cost_estimate": "Unpredictable - depends on task density"
+          },
+          {
+            "option": "Quality-based rotation (detect reasoning degradation)",
+            "pros": [
+              "Directly measures what matters - output quality",
+              "Adapts to actual cognitive state",
+              "Could allow more context use when quality holds",
+              "No arbitrary thresholds"
+            ],
+            "cons": [
+              "No reliable automated quality detection method",
+              "Requires human review to detect degradation",
+              "By the time degradation is detected, damage is done",
+              "Complex meta-evaluation adds overhead"
+            ],
+            "cost_estimate": "Additional evaluation tokens per cycle"
+          }
+        ],
+        "rationale": "The 40/60 thresholds are derived from empirical observation of Claude model behavior. Below 40% context, reasoning remains sharp with consistent code quality. Between 40-60%, quality is acceptable for strategic oversight but risks degradation under complex reasoning. Above 60%, models exhibit increased hallucination, repetition, and logical errors. These specific percentages provide a safety buffer: Workers terminate at 40% to ensure atomic tasks complete successfully, Managers rotate at 60% to preserve strategic decision quality. The ~200,000 token context window allows approximately 80,000 tokens for Workers (sufficient for substantial coding tasks) and 120,000 tokens for Managers (sufficient for ADR management and roadmap oversight).",
+        "consequences": {
+          "positive": [
+            "Workers always produce peak-quality code",
+            "Managers make sound strategic decisions within threshold",
+            "Clear, measurable criteria for rotation decisions",
+            "Predictable context budget per agent lifecycle",
+            "Color-coded dashboard visualization (Blue/Orange/Red)"
+          ],
+          "negative": [
+            "May waste context when tasks complete well under threshold",
+            "Token counting adds overhead to every operation",
+            "Thresholds may need adjustment for different models",
+            "Cannot utilize full context window capacity"
+          ],
+          "risks": [
+            "Token estimation errors: Mitigated by conservative thresholds with buffer",
+            "Context spike during large file reads: Mitigated by task atomicity constraints",
+            "Model changes affecting thresholds: Mitigated by configurable threshold values",
+            "Threshold race conditions: Mitigated by check-before-action pattern"
+          ]
+        },
+        "related_decisions": ["ADR-0002"],
+        "superseded_by": null,
+        "artifact_references": {
+          "features": ["FR-002", "FR-003", "FR-007"],
+          "entities": ["ENT-009"],
+          "tasks": ["TASK-011", "TASK-012", "TASK-033", "TASK-034"],
+          "flows": ["FLOW-002", "FLOW-012"]
+        }
+      },
+      {
+        "id": "ADR-0004",
+        "title": "WebSocket Real-Time Dashboard (Socket.io with Express)",
+        "status": "accepted",
+        "date": "2026-01-11T23:59:00Z",
+        "author": "Claude Code (Pipeline Generator)",
+        "context": {
+          "description": "Human engineers need real-time visibility into autonomous pipeline operations including context health, task velocity, and guardrail status. The dashboard must update within 100ms of state changes to enable rapid intervention when context approaches danger zones or quality gates fail.",
+          "requirements": [
+            "FR-007: HTML Dashboard real-time Mission Control",
+            "FR-008: Node.js Watcher WebSocket bridge",
+            "Performance requirement: <100ms telemetry latency",
+            "ST-026: File watcher with Socket.io emission"
+          ],
+          "constraints": [
+            "Multiple concurrent browser connections supported",
+            "File-based state requires watching, not database triggers",
+            "Must work with existing Express.js static file serving",
+            "Browser compatibility: Chrome, Firefox, Safari"
+          ]
+        },
+        "decision": "Use Socket.io on Express.js for real-time WebSocket communication between the Node.js file watcher and HTML dashboard. The watcher monitors .ralph/telemetry.json and IMPLEMENTATION_PLAN.md using fs.watch, emitting 'telemetry' and 'roadmap' events to all connected browser clients.",
+        "alternatives": [
+          {
+            "option": "HTTP polling (e.g., fetch every 500ms)",
+            "pros": [
+              "Simple implementation with standard HTTP",
+              "Works through all proxies and firewalls",
+              "Stateless - no connection management",
+              "Easy debugging with browser dev tools"
+            ],
+            "cons": [
+              "Minimum 500ms latency violates <100ms requirement",
+              "Wasteful requests when state hasn't changed",
+              "Higher server load from constant requests",
+              "Poor user experience with visible update delays"
+            ],
+            "cost_estimate": "Free, but higher bandwidth usage"
+          },
+          {
+            "option": "Server-Sent Events (SSE)",
+            "pros": [
+              "Built-in browser support, no library needed",
+              "Automatic reconnection handling",
+              "Simpler than WebSocket for one-way data",
+              "Works over HTTP/1.1 without upgrade"
+            ],
+            "cons": [
+              "One-way communication only (server to client)",
+              "Cannot send Crisis Mode commands from dashboard",
+              "Limited browser connections per domain",
+              "No binary data support for potential future features"
+            ],
+            "cost_estimate": "Free"
+          },
+          {
+            "option": "GraphQL subscriptions (Apollo/Hasura)",
+            "pros": [
+              "Type-safe schema for telemetry data",
+              "Selective field subscriptions reduce bandwidth",
+              "Unified query/mutation/subscription API",
+              "Rich tooling ecosystem"
+            ],
+            "cons": [
+              "Significant complexity for simple telemetry",
+              "Requires GraphQL server infrastructure",
+              "Overkill for two event types (telemetry, roadmap)",
+              "Learning curve for development team"
+            ],
+            "cost_estimate": "Free (self-hosted) or $99+/month (managed)"
+          }
+        ],
+        "rationale": "Socket.io provides bidirectional real-time communication with built-in reconnection, room management, and fallback transports. The sub-100ms latency requirement is easily met with WebSocket's persistent connection. Socket.io's event-based API maps naturally to our file watch events ('telemetry', 'roadmap', 'crisis'). The library handles connection management, heartbeats, and graceful degradation automatically. Integration with Express.js (already required for static file serving) is seamless. The Crisis Mode button requires bidirectional communication that SSE cannot provide.",
+        "consequences": {
+          "positive": [
+            "Sub-100ms latency from file change to UI update",
+            "Bidirectional communication enables Crisis Mode from dashboard",
+            "Automatic reconnection handles network interruptions",
+            "Multiple browser connections supported out of the box",
+            "Event-based API matches file watch pattern naturally"
+          ],
+          "negative": [
+            "Additional dependency (socket.io package)",
+            "Persistent connections consume server resources",
+            "WebSocket may require proxy configuration",
+            "Debugging requires specialized tools"
+          ],
+          "risks": [
+            "Connection drops: Mitigated by Socket.io auto-reconnection",
+            "Server memory from connections: Mitigated by connection limits",
+            "Proxy compatibility: Mitigated by Socket.io's HTTP fallback",
+            "Security: Mitigated by localhost-only binding"
+          ]
+        },
+        "related_decisions": ["ADR-0010"],
+        "superseded_by": null,
+        "artifact_references": {
+          "features": ["FR-007", "FR-008"],
+          "entities": ["ENT-009"],
+          "tasks": ["TASK-027", "TASK-028", "TASK-029", "TASK-030", "TASK-031", "TASK-032", "TASK-033", "TASK-034", "TASK-035", "TASK-036"],
+          "flows": ["FLOW-012", "FLOW-013"]
+        }
+      },
+      {
+        "id": "ADR-0005",
+        "title": "Crisis Mode Hard Reset (pkill + git reset --hard)",
+        "status": "accepted",
+        "date": "2026-01-11T23:59:00Z",
+        "author": "Claude Code (Pipeline Generator)",
+        "context": {
+          "description": "AI agents can enter 'hallucination spirals' where degraded reasoning produces incorrect code that fails tests, leading to increasingly confused repair attempts that burn tokens without progress. The system needs an immediate emergency stop that halts all processes and reverts to a known good state within seconds.",
+          "requirements": [
+            "FR-009: Crisis Mode emergency override system",
+            "Performance requirement: <2 seconds from button click to termination",
+            "ST-030: Process termination via pkill",
+            "ST-031: Git hard reset to last commit"
+          ],
+          "constraints": [
+            "System operates autonomously but requires human for Crisis intervention",
+            "Git history must be preserved for forensics",
+            "Telemetry must reset to enable clean restart"
+          ]
+        },
+        "decision": "Implement Crisis Mode as a three-step hard reset: (1) pkill -f orchestrate.sh and pkill -f claude-code to terminate all AI processes immediately, (2) git reset --hard HEAD to revert any uncommitted code changes, and (3) reset telemetry.json to 0% context. No confirmation dialog - single click activation for maximum response speed.",
+        "alternatives": [
+          {
+            "option": "Graceful shutdown with state preservation",
+            "pros": [
+              "Preserves work-in-progress for potential recovery",
+              "Allows agents to complete current atomic operation",
+              "Cleaner process termination without orphans",
+              "Status fragments captured before exit"
+            ],
+            "cons": [
+              "Graceful shutdown may take 10-30 seconds",
+              "Hallucinating agent may not respond to shutdown signal",
+              "Token burn continues during graceful period",
+              "May leave code in inconsistent state"
+            ],
+            "cost_estimate": "Potential $0.50-2.00 additional token cost during shutdown"
+          },
+          {
+            "option": "Checkpoint restore (save/restore points)",
+            "pros": [
+              "Can restore to any previous checkpoint, not just HEAD",
+              "Preserves uncommitted work at checkpoint time",
+              "More granular recovery than git commit history",
+              "Could include telemetry state in checkpoint"
+            ],
+            "cons": [
+              "Complex checkpoint management infrastructure",
+              "Storage overhead for checkpoint files",
+              "Must decide when to create checkpoints",
+              "Checkpoint may itself be corrupted state"
+            ],
+            "cost_estimate": "Storage cost for checkpoint files"
+          },
+          {
+            "option": "Container isolation with snapshot restore",
+            "pros": [
+              "Complete environment isolation",
+              "Instantaneous restore from container snapshot",
+              "No cleanup needed - just restart container",
+              "Prevents any system-level damage"
+            ],
+            "cons": [
+              "Significant infrastructure complexity",
+              "Developer machines may not have Docker",
+              "Performance overhead from containerization",
+              "Overkill for single-process AI agent"
+            ],
+            "cost_estimate": "Free (Docker) but requires setup"
+          }
+        ],
+        "rationale": "Hard reset prioritizes immediate token burn stop over state preservation. When an agent is hallucinating, any work it produces is likely incorrect and must be discarded anyway. The pkill commands ensure immediate process termination regardless of agent state. Git reset --hard reverts to the last known good commit, which represents verified code that passed all guardrails. This approach is simple, reliable, and fast (<2 seconds total). The lack of confirmation dialog is intentional: in a crisis, every second of delay burns tokens and produces more incorrect code. The dashboard Crisis button has visual warning styling (red neon glow) to prevent accidental activation.",
+        "consequences": {
+          "positive": [
+            "Immediate token burn stop - no further API costs",
+            "Guaranteed revert to verified code state",
+            "Simple implementation with standard Unix tools",
+            "Sub-2-second response time",
+            "Git history preserved for post-crisis forensics"
+          ],
+          "negative": [
+            "All uncommitted work is lost, even if partially correct",
+            "No opportunity for agent to explain what went wrong",
+            "Blunt instrument - cannot selectively preserve state",
+            "Requires manual restart after crisis resolution"
+          ],
+          "risks": [
+            "Accidental activation: Mitigated by prominent warning styling",
+            "Orphan processes: Mitigated by pkill pattern matching",
+            "Git state corruption: Mitigated by standard git operations",
+            "Telemetry file locked: Mitigated by process kill before file reset"
+          ]
+        },
+        "related_decisions": ["ADR-0002"],
+        "superseded_by": null,
+        "artifact_references": {
+          "features": ["FR-009"],
+          "entities": ["ENT-009"],
+          "tasks": ["TASK-037", "TASK-038", "TASK-039"],
+          "flows": ["FLOW-014"]
+        }
+      },
+      {
+        "id": "ADR-0006",
+        "title": "Slash Command Interface (/...prefix Pattern)",
+        "status": "accepted",
+        "date": "2026-01-11T23:59:00Z",
+        "author": "Claude Code (Pipeline Generator)",
+        "context": {
+          "description": "Human engineers need a simple way to invoke complex pipeline operations without memorizing API calls or configuration details. The interface must feel native to CLI-based development workflows while abstracting the orchestration complexity of multi-agent coordination.",
+          "requirements": [
+            "FR-010: Slash Command Interface for pipeline operations",
+            "ST-033: /...seed command for brainstorm distillation",
+            "ST-034: /...plan command for roadmap generation",
+            "ST-035: /...loop command for autonomous execution",
+            "ST-036: /...status command for progress checking",
+            "ST-037: /...digest command for unstructured input"
+          ],
+          "constraints": [
+            "Must be human-friendly abstraction over complex orchestration",
+            "Must support file path arguments (@file syntax)",
+            "Must integrate with Claude Code CLI environment"
+          ]
+        },
+        "decision": "Implement custom slash commands using /...prefix pattern (e.g., /...seed, /...plan, /...loop, /...status, /...digest) that trigger corresponding pipeline operations. Commands accept optional arguments including @file references for input files. The triple-dot prefix distinguishes pipeline commands from built-in Claude Code commands.",
+        "alternatives": [
+          {
+            "option": "GUI-only interface (web dashboard buttons)",
+            "pros": [
+              "Visual discovery of available operations",
+              "No command memorization required",
+              "Can show operation status visually",
+              "Accessible to non-CLI users"
+            ],
+            "cons": [
+              "Requires browser context switching",
+              "Cannot integrate with terminal workflows",
+              "More complex implementation than CLI",
+              "Slower for power users"
+            ],
+            "cost_estimate": "Additional frontend development time"
+          },
+          {
+            "option": "API-only interface (REST/GraphQL endpoints)",
+            "pros": [
+              "Programmable for CI/CD integration",
+              "Language-agnostic access",
+              "Clear request/response contract",
+              "Easy to document and version"
+            ],
+            "cons": [
+              "Requires curl/HTTP client knowledge",
+              "Verbose for simple operations",
+              "Not integrated with Claude Code experience",
+              "Additional server infrastructure"
+            ],
+            "cost_estimate": "Additional API server maintenance"
+          },
+          {
+            "option": "Native CLI flags (orchestrate.sh --seed, --plan)",
+            "pros": [
+              "Standard Unix convention",
+              "Tab completion support",
+              "Works outside Claude Code context",
+              "Easy to script"
+            ],
+            "cons": [
+              "Separate from Claude Code conversation flow",
+              "Must exit Claude Code to run commands",
+              "No integration with agent context",
+              "Learning two separate interfaces"
+            ],
+            "cost_estimate": "Free, but workflow friction"
+          }
+        ],
+        "rationale": "Slash commands provide the optimal balance between discoverability and efficiency for Claude Code users. The /...prefix is instantly recognizable as a command invocation pattern familiar from Slack, Discord, and other tools. The triple-dot distinguishes pipeline commands from built-in Claude Code commands (which use single slash). This approach keeps the human in the Claude Code conversation while enabling pipeline orchestration. The @file syntax for input references follows established conventions. Commands can be invoked mid-conversation, making the workflow seamless: discuss requirements, /...seed the brainstorm, review PRD, /...plan the roadmap, /...loop to execute.",
+        "consequences": {
+          "positive": [
+            "Natural integration with Claude Code conversation flow",
+            "Memorable command names matching operation intent",
+            "Instant invocation without context switching",
+            "Extensible for future operations",
+            "Self-documenting with /...help"
+          ],
+          "negative": [
+            "Custom prefix requires user learning",
+            "No standard tab completion in Claude Code",
+            "Must parse command arguments manually",
+            "Documentation required for each command"
+          ],
+          "risks": [
+            "Command discovery: Mitigated by /...help listing all commands",
+            "Argument parsing errors: Mitigated by clear error messages",
+            "Prefix conflicts: Mitigated by triple-dot uniqueness",
+            "Future Claude Code changes: Mitigated by prefix documentation"
+          ]
+        },
+        "related_decisions": [],
+        "superseded_by": null,
+        "artifact_references": {
+          "features": ["FR-010"],
+          "entities": [],
+          "tasks": ["TASK-040", "TASK-041", "TASK-042", "TASK-043", "TASK-044"],
+          "flows": ["FLOW-015"]
+        }
+      },
+      {
+        "id": "ADR-0007",
+        "title": "Zod for Schema Validation",
+        "status": "accepted",
+        "date": "2026-01-11T23:59:00Z",
+        "author": "Claude Code (Pipeline Generator)",
+        "context": {
+          "description": "File-based state management requires runtime validation to ensure data integrity. AI agents may produce malformed output, and JSON files may be manually edited. The system needs TypeScript-first schema validation that catches errors at runtime while providing excellent developer experience.",
+          "requirements": [
+            "Technical requirement: All input validated with Zod schemas",
+            "ST-015: Zod validation presence on all API endpoints",
+            "Dependency: Zod ^3.22.0 for schema validation"
+          ],
+          "constraints": [
+            "TypeScript-first project (tsconfig.json strict mode)",
+            "Named exports only - no export default",
+            "Must validate file-based entities at read time"
+          ]
+        },
+        "decision": "Use Zod as the exclusive schema validation library for all file-based entities (Project, PRD, Task, ADR, Telemetry, etc.) and API inputs. Each entity defined in the ERD has a corresponding Zod schema that validates structure, types, and constraints. Validation occurs at file read time to fail fast on corrupted data.",
+        "alternatives": [
+          {
+            "option": "Yup schema validation",
+            "pros": [
+              "Mature library with large community",
+              "Good error messages out of the box",
+              "Familiar API for Formik users",
+              "Async validation support"
+            ],
+            "cons": [
+              "Weaker TypeScript inference than Zod",
+              "Larger bundle size",
+              "Less composable schema definitions",
+              "API feels more verbose"
+            ],
+            "cost_estimate": "Free"
+          },
+          {
+            "option": "Joi schema validation",
+            "pros": [
+              "Battle-tested in production (Hapi ecosystem)",
+              "Extensive validation rules built-in",
+              "Good documentation",
+              "Supports complex nested validations"
+            ],
+            "cons": [
+              "TypeScript types are bolt-on, not native",
+              "Designed for JavaScript, TypeScript second-class",
+              "Heavy dependency for simple validations",
+              "No schema inference for types"
+            ],
+            "cost_estimate": "Free"
+          },
+          {
+            "option": "Manual validation (type guards, assertions)",
+            "pros": [
+              "No dependencies",
+              "Full control over validation logic",
+              "Can optimize for specific use cases",
+              "No library API learning curve"
+            ],
+            "cons": [
+              "Tedious to write and maintain",
+              "Easy to miss edge cases",
+              "No schema reuse or composition",
+              "Error messages must be hand-crafted"
+            ],
+            "cost_estimate": "Higher development time"
+          }
+        ],
+        "rationale": "Zod is the TypeScript-native schema validation library with best-in-class type inference. The z.infer<typeof Schema> pattern generates TypeScript types directly from schema definitions, ensuring types and validation stay synchronized without duplication. Zod's composable API (z.object, z.array, z.union, z.refine) maps naturally to our ERD entity definitions. The library's small size (~12KB minified) and zero dependencies align with the project's simplicity goals. Zod's error messages are developer-friendly and include path information for nested validation failures. The ecosystem includes zod-to-json-schema for potential future OpenAPI generation.",
+        "consequences": {
+          "positive": [
+            "TypeScript types automatically derived from schemas",
+            "Single source of truth for structure and validation",
+            "Excellent error messages with field paths",
+            "Composable schema definitions (extend, pick, omit)",
+            "Small bundle size with zero dependencies"
+          ],
+          "negative": [
+            "Runtime overhead for validation (minimal)",
+            "Team must learn Zod API",
+            "Some complex validations require z.refine custom logic",
+            "Error message customization can be verbose"
+          ],
+          "risks": [
+            "Performance impact: Mitigated by file-read-time validation (not hot path)",
+            "Schema version evolution: Mitigated by optional fields with defaults",
+            "Complex custom validations: Mitigated by z.refine and z.transform",
+            "Bundle size growth: Mitigated by tree-shaking support"
+          ]
+        },
+        "related_decisions": ["ADR-0001"],
+        "superseded_by": null,
+        "artifact_references": {
+          "features": ["FR-006"],
+          "entities": ["ENT-001", "ENT-002", "ENT-003", "ENT-004", "ENT-005", "ENT-006", "ENT-007", "ENT-008", "ENT-009", "ENT-010", "ENT-011"],
+          "tasks": ["TASK-003", "TASK-004", "TASK-005", "TASK-006", "TASK-007"],
+          "flows": []
+        }
+      },
+      {
+        "id": "ADR-0008",
+        "title": "Vitest for Testing Framework",
+        "status": "accepted",
+        "date": "2026-01-11T23:59:00Z",
+        "author": "Claude Code (Pipeline Generator)",
+        "context": {
+          "description": "The Guardrail System requires a testing framework for back pressure enforcement. Tests must run quickly during the Ralph Wiggum Loop (Edit-Build-Test cycle) to provide rapid feedback. The framework must be TypeScript-native and compatible with ESM modules.",
+          "requirements": [
+            "FR-004: Guardrail System back pressure enforcement",
+            "ST-014: Unit test gate requiring all tests to pass",
+            "Dependency: Vitest or Jest (PRD lists both as options)",
+            "Technical requirement: TypeScript 5.0+ compatibility"
+          ],
+          "constraints": [
+            "Tests run after every Worker code edit",
+            "Target >90% coverage for Services, >80% for Controllers",
+            "Test output must not bloat Worker context"
+          ]
+        },
+        "decision": "Use Vitest as the test framework for unit and integration testing. Vitest provides native ESM support, TypeScript out of the box, and significantly faster execution than Jest due to Vite's transformation pipeline. Test output is handled by sub-agents to prevent context bloat in Workers.",
+        "alternatives": [
+          {
+            "option": "Jest test framework",
+            "pros": [
+              "Most popular JavaScript test framework",
+              "Extensive ecosystem of matchers and plugins",
+              "Well-documented with large community",
+              "Snapshot testing built-in"
+            ],
+            "cons": [
+              "Slower than Vitest (especially with TypeScript)",
+              "ESM support is experimental and buggy",
+              "Requires additional configuration for TypeScript",
+              "CommonJS-first design shows age"
+            ],
+            "cost_estimate": "Free"
+          },
+          {
+            "option": "Mocha + Chai test framework",
+            "pros": [
+              "Highly flexible and extensible",
+              "BDD and TDD style support",
+              "Minimal opinions on structure",
+              "Long-standing reliability"
+            ],
+            "cons": [
+              "Requires multiple packages (mocha, chai, sinon, etc.)",
+              "No built-in TypeScript support",
+              "Configuration-heavy setup",
+              "No built-in coverage reporting"
+            ],
+            "cost_estimate": "Free"
+          },
+          {
+            "option": "Node.js built-in test runner (node:test)",
+            "pros": [
+              "Zero dependencies - built into Node.js",
+              "Stable API as of Node 20",
+              "Fast startup - no transpilation",
+              "Official support and maintenance"
+            ],
+            "cons": [
+              "Limited TypeScript integration",
+              "Fewer assertion helpers than mature frameworks",
+              "No watch mode equivalent to Vitest",
+              "Smaller ecosystem of helpers"
+            ],
+            "cost_estimate": "Free"
+          }
+        ],
+        "rationale": "Vitest is purpose-built for modern TypeScript projects with ESM modules. Its Vite-based transformation pipeline is 2-10x faster than Jest for TypeScript tests, critical for the rapid Edit-Build-Test cycle. Vitest's API is Jest-compatible, lowering the learning curve. Native ESM support eliminates the configuration complexity of Jest's experimental ESM mode. The framework includes watch mode, coverage reporting, and UI for development. Vitest's speed means Workers get faster feedback, completing tasks more efficiently within their context window budget.",
+        "consequences": {
+          "positive": [
+            "2-10x faster test execution than Jest",
+            "Native TypeScript and ESM support, no configuration",
+            "Jest-compatible API for familiar syntax",
+            "Built-in watch mode for development",
+            "Faster Ralph Wiggum Loop iteration"
+          ],
+          "negative": [
+            "Smaller community than Jest",
+            "Some Jest plugins may not work directly",
+            "Newer project with less production history",
+            "Vite dependency adds to node_modules"
+          ],
+          "risks": [
+            "Plugin compatibility: Mitigated by Jest-compatible API",
+            "Framework stability: Mitigated by active development and Vite backing",
+            "Community support: Mitigated by rapid adoption trend",
+            "Breaking changes: Mitigated by semantic versioning"
+          ]
+        },
+        "related_decisions": ["ADR-0007"],
+        "superseded_by": null,
+        "artifact_references": {
+          "features": ["FR-004"],
+          "entities": [],
+          "tasks": ["TASK-001", "TASK-003", "TASK-004", "TASK-005", "TASK-006", "TASK-007"],
+          "flows": ["FLOW-008"]
+        }
+      },
+      {
+        "id": "ADR-0009",
+        "title": "No Traditional Database",
+        "status": "accepted",
+        "date": "2026-01-11T23:59:00Z",
+        "author": "Claude Code (Pipeline Generator)",
+        "context": {
+          "description": "Traditional databases add operational complexity including connection management, schema migrations, backups, and deployment configuration. For a single-user autonomous development tool, database infrastructure may be unnecessary overhead. The system needs to evaluate whether file-based state can fully replace database functionality.",
+          "requirements": [
+            "FR-006: File-Based State Management as primary paradigm",
+            "ERD database_type: file-based-hybrid",
+            "Portability: Simple directory copy between machines"
+          ],
+          "constraints": [
+            "Single-agent execution model (no concurrent access)",
+            "State must be version controllable",
+            "Must support 100+ atomic tasks per project"
+          ]
+        },
+        "decision": "Operate entirely without a traditional database. All state is stored in markdown/JSON files with Zod validation. The ERD defines file paths for each entity rather than table names. No SQLite, PostgreSQL, Redis, or other database technology is used. Prisma dependency in the PRD refers to target projects generated by the pipeline, not the pipeline itself.",
+        "alternatives": [
+          {
+            "option": "SQLite for local storage",
+            "pros": [
+              "Single-file database, similar deployment story",
+              "ACID transactions for data integrity",
+              "SQL queries for complex state retrieval",
+              "Widely supported with excellent tooling"
+            ],
+            "cons": [
+              "Binary format not human-readable",
+              "Not git-diffable for state change tracking",
+              "Schema migrations required for changes",
+              "Adds Prisma/better-sqlite3 dependency"
+            ],
+            "cost_estimate": "Free"
+          },
+          {
+            "option": "Hybrid: Files for documents, SQLite for relations",
+            "pros": [
+              "Best of both approaches",
+              "Documents remain human-readable",
+              "Relations enable complex queries",
+              "Flexible architecture"
+            ],
+            "cons": [
+              "Two storage systems to maintain",
+              "Data synchronization complexity",
+              "Partial git tracking only",
+              "More complex mental model"
+            ],
+            "cost_estimate": "Free, but higher complexity cost"
+          },
+          {
+            "option": "Lightweight key-value store (LevelDB, LMDB)",
+            "pros": [
+              "Fast read/write operations",
+              "Simple key-value API",
+              "Embedded, no server required",
+              "Good for simple state management"
+            ],
+            "cons": [
+              "Binary format not human-readable",
+              "No query capabilities",
+              "Not git-diffable",
+              "Limited tooling for inspection"
+            ],
+            "cost_estimate": "Free"
+          }
+        ],
+        "rationale": "The pipeline operates as a single-user development tool where only one agent executes at a time. This eliminates the primary benefits of databases: concurrent access control and transaction isolation. File-based state provides unique advantages: human readability for debugging, git integration for change tracking, RipGrep compatibility for agent search, and zero infrastructure requirements. The ERD 'file-based-hybrid' type indicates files as primary storage with runtime entities for ephemeral state. This decision significantly simplifies deployment - the entire pipeline is a portable directory that can be copied between machines without database setup.",
+        "consequences": {
+          "positive": [
+            "Zero database infrastructure to manage",
+            "Complete state visible in git history",
+            "Human-readable debugging without specialized tools",
+            "Portable via simple directory copy",
+            "RipGrep search works on all state files"
+          ],
+          "negative": [
+            "No ACID transactions for complex operations",
+            "No concurrent access safety (single-agent mitigates)",
+            "No SQL queries for complex state retrieval",
+            "Manual consistency management between files"
+          ],
+          "risks": [
+            "Data corruption: Mitigated by atomic write operations and Zod validation",
+            "Concurrent access: Mitigated by single-agent execution model",
+            "Complex queries: Mitigated by structured file organization and RipGrep",
+            "Scale limits: Mitigated by task atomicity (100+ tasks supported)"
+          ]
+        },
+        "related_decisions": ["ADR-0001"],
+        "superseded_by": null,
+        "artifact_references": {
+          "features": ["FR-006"],
+          "entities": ["ENT-001", "ENT-002", "ENT-003", "ENT-004", "ENT-005", "ENT-006", "ENT-007", "ENT-008", "ENT-009", "ENT-010", "ENT-011"],
+          "tasks": ["TASK-008", "TASK-009", "TASK-010", "TASK-011"],
+          "flows": ["FLOW-011"]
+        }
+      },
+      {
+        "id": "ADR-0010",
+        "title": "Neon-Liquid Industrial UI Design Language",
+        "status": "accepted",
+        "date": "2026-01-11T23:59:00Z",
+        "author": "Claude Code (Pipeline Generator)",
+        "context": {
+          "description": "The HTML dashboard serves as Mission Control for autonomous pipeline operations. The visual design must communicate system health at a glance, with immediate recognition of context danger zones and guardrail failures. The aesthetic should appeal to developers and convey the innovative nature of AI-assisted development.",
+          "requirements": [
+            "FR-007: HTML Dashboard real-time Mission Control",
+            "Design preference preset: creative",
+            "ST-022: Color states Blue (<40%), Orange (40-60%), Red (>60%)",
+            "Accessibility: High contrast, keyboard navigation"
+          ],
+          "constraints": [
+            "Dark mode required",
+            "Target audience: Software engineers and technical leads",
+            "Must work in Chrome, Firefox, Safari"
+          ]
+        },
+        "decision": "Implement a 'neon-liquid' industrial terminal aesthetic with: dark theme (#0d1117 background, #161b22 panels), monospace fonts (Fira Code), neon glow effects on progress bars and buttons, smooth CSS transitions, and color-coded health states (cyan for Smart Zone, orange for Degrading, red for Dumb Zone/Crisis). The Crisis button has prominent red neon glow styling.",
+        "alternatives": [
+          {
+            "option": "Light theme professional UI",
+            "pros": [
+              "Better readability in bright environments",
+              "Traditional enterprise aesthetic",
+              "Familiar to business users",
+              "Easier to achieve accessibility contrast"
+            ],
+            "cons": [
+              "Doesn't match developer tool conventions",
+              "Less impactful for Mission Control aesthetic",
+              "Eye strain during extended monitoring",
+              "Doesn't convey innovative/cutting-edge nature"
+            ],
+            "cost_estimate": "Similar development cost"
+          },
+          {
+            "option": "Minimal/brutalist UI",
+            "pros": [
+              "Fastest to implement",
+              "No design decisions to debate",
+              "Smallest CSS footprint",
+              "Focus on function over form"
+            ],
+            "cons": [
+              "Reduced visual hierarchy for health states",
+              "Harder to spot problems at a glance",
+              "Less engaging for extended monitoring",
+              "Doesn't inspire confidence in tooling"
+            ],
+            "cost_estimate": "Lower development cost"
+          },
+          {
+            "option": "CLI-only interface (no HTML dashboard)",
+            "pros": [
+              "Zero frontend development",
+              "Pure terminal workflow",
+              "No browser context switching",
+              "Familiar to hardcore CLI users"
+            ],
+            "cons": [
+              "No real-time visual monitoring",
+              "Text-based status harder to parse",
+              "Crisis button requires terminal command",
+              "Multiple terminal windows needed"
+            ],
+            "cost_estimate": "Lower development cost, higher monitoring friction"
+          }
+        ],
+        "rationale": "The neon-liquid aesthetic serves functional and psychological purposes. Dark backgrounds reduce eye strain during extended autonomous runs. High-contrast neon colors (cyan: #00d2ff, orange: #f9826c, red: #ff4b2b) provide immediate visual recognition of system health from across the room. The industrial terminal metaphor positions the tool as mission-critical infrastructure, inspiring appropriate gravity in operations. Smooth CSS transitions create a 'liquid' feel that conveys real-time responsiveness. The GitHub-inspired dark theme (#0d1117) feels native to developer workflows. Monospace fonts (Fira Code) reinforce the terminal aesthetic while ensuring code snippets display correctly.",
+        "consequences": {
+          "positive": [
+            "Instant visual recognition of system health states",
+            "Reduced eye strain during extended monitoring",
+            "Aesthetic appeals to target developer audience",
+            "Crisis button prominence prevents overlooking",
+            "Professional yet innovative impression"
+          ],
+          "negative": [
+            "More complex CSS than minimal approach",
+            "Neon effects may distract some users",
+            "Dark theme not ideal for all lighting conditions",
+            "Custom design requires more development time"
+          ],
+          "risks": [
+            "Accessibility: Mitigated by high contrast ratios and keyboard support",
+            "Browser compatibility: Mitigated by standard CSS, no bleeding-edge features",
+            "Performance: Mitigated by CSS-only animations, no JavaScript",
+            "User preference: Mitigated by functional design over pure aesthetics"
+          ]
+        },
+        "related_decisions": ["ADR-0004"],
+        "superseded_by": null,
+        "artifact_references": {
+          "features": ["FR-007"],
+          "entities": [],
+          "tasks": ["TASK-033", "TASK-034", "TASK-035", "TASK-036"],
+          "flows": ["FLOW-012"]
+        }
+      }
+    ]
+  }
+}

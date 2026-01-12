@@ -1,0 +1,168 @@
+{
+  "id": "FLOW-012",
+  "name": "Dashboard Visualization",
+  "description": "Real-time Mission Control HUD providing visibility into context health, task velocity, cost tracking, and guardrail status.",
+  "feature_id": "FR-007",
+  "story_ids": ["ST-022", "ST-023", "ST-024", "ST-025"],
+  "actor": "user",
+  "trigger": "User opens dashboard at http://localhost:3000",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "User navigates to http://localhost:3000 in browser",
+      "actor": "user",
+      "inputs": ["browser_request"],
+      "outputs": ["html_dashboard"],
+      "conditions": ["watcher_running"],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Dashboard establishes WebSocket connection to Watcher",
+      "actor": "system",
+      "inputs": ["socket_connection"],
+      "outputs": ["connected_client"],
+      "conditions": [],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Watcher sends initial state snapshot to client",
+      "actor": "system",
+      "inputs": ["current_telemetry", "current_roadmap"],
+      "outputs": ["initial_state"],
+      "conditions": [],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Dashboard renders Context Window Progress Bars",
+      "actor": "system",
+      "inputs": ["manager_context_percent", "worker_context_percent"],
+      "outputs": ["context_bars_ui"],
+      "conditions": [],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Apply color coding based on zone status",
+      "actor": "system",
+      "inputs": ["context_percent"],
+      "outputs": ["bar_color"],
+      "conditions": [
+        "Blue (#00d2ff): <40% Smart Zone",
+        "Orange: 40-60% Degrading",
+        "Red (#ff4b2b): >60% Dumb Zone"
+      ],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Dashboard renders Roadmap Progress Visualization",
+      "actor": "system",
+      "inputs": ["completed_tasks", "total_tasks", "current_task"],
+      "outputs": ["roadmap_ui"],
+      "conditions": [],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Display completed/total ratio and current active task",
+      "actor": "system",
+      "inputs": ["progress_data"],
+      "outputs": ["progress_display"],
+      "conditions": [],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Dashboard renders Cost Tracking Display",
+      "actor": "system",
+      "inputs": ["elapsed_time", "cost_rate"],
+      "outputs": ["cost_ui"],
+      "conditions": ["cost_rate = $10.42/hour"],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Calculate tasks per hour velocity",
+      "actor": "system",
+      "inputs": ["tasks_completed", "elapsed_hours"],
+      "outputs": ["velocity_metric"],
+      "conditions": [],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Dashboard renders Guardrail Status Panel",
+      "actor": "system",
+      "inputs": ["tsc_status", "tenancy_audit", "test_coverage"],
+      "outputs": ["guardrail_ui"],
+      "conditions": [],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Display red/green indicators for each guardrail check",
+      "actor": "system",
+      "inputs": ["check_results"],
+      "outputs": ["status_indicators"],
+      "conditions": [],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "Listen for real-time telemetry updates via WebSocket",
+      "actor": "system",
+      "inputs": ["socket_events"],
+      "outputs": ["live_updates"],
+      "conditions": [],
+      "next_steps": ["STEP-004"]
+    }
+  ],
+  "success_criteria": [
+    "Manager bar shows steady growth with blue/cyan in Smart Zone",
+    "Worker bar pulses and resets to 0% on task completion",
+    "Color states: Blue (<40%), Orange (40-60%), Red (>60%)",
+    "Smooth CSS transitions with neon-liquid aesthetic",
+    "Shows completed/total tasks ratio",
+    "Displays current active task title",
+    "Running cost displayed at $10.42/hour rate",
+    "TypeScript, Multi-tenancy, Coverage status visible",
+    "Red/green indicators for pass/fail"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "WebSocket connection fails",
+      "recovery_action": "Retry connection with exponential backoff",
+      "escalation": "Display offline status to user"
+    },
+    {
+      "error_condition": "Telemetry data malformed",
+      "recovery_action": "Use last known good state",
+      "escalation": "Display data error indicator"
+    },
+    {
+      "error_condition": "Watcher server not running",
+      "recovery_action": "Show connection error message",
+      "escalation": "Prompt user to start watcher"
+    },
+    {
+      "error_condition": "Browser doesn't support WebSocket",
+      "recovery_action": "Fall back to polling",
+      "escalation": "Display compatibility warning"
+    }
+  ]
+}

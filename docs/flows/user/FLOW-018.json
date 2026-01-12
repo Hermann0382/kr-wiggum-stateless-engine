@@ -1,0 +1,173 @@
+{
+  "id": "FLOW-018",
+  "name": "Final Deployment and Client Handoff",
+  "description": "End-of-project documentation and deployment automation using accumulated Shift Reports and ADR entries for production-ready handoff.",
+  "feature_id": "FR-013",
+  "story_ids": ["ST-042", "ST-043"],
+  "actor": "system",
+  "trigger": "IMPLEMENTATION_PLAN.md shows 100% completion",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Final Manager detects 100% roadmap completion",
+      "actor": "system",
+      "inputs": ["IMPLEMENTATION_PLAN.md"],
+      "outputs": ["completion_confirmed"],
+      "conditions": ["all_tasks_checked"],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Initiate Final Sanity Check audits",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["audit_job"],
+      "conditions": [],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Global RipGrep for tenantId in all Prisma queries",
+      "actor": "system",
+      "inputs": ["prisma_files"],
+      "outputs": ["tenancy_audit_result"],
+      "conditions": ["all_queries_have_tenantId"],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Verify Zod validation presence on all API endpoints",
+      "actor": "system",
+      "inputs": ["api_files"],
+      "outputs": ["validation_audit_result"],
+      "conditions": ["all_endpoints_validated"],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Named export verification (no export default)",
+      "actor": "system",
+      "inputs": ["module_files"],
+      "outputs": ["export_audit_result"],
+      "conditions": ["no_default_exports"],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "N+1 query detection in Service layer",
+      "actor": "system",
+      "inputs": ["service_files"],
+      "outputs": ["n_plus_one_audit_result"],
+      "conditions": [],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Compile all SHIFT_REPORT.md files for synthesis",
+      "actor": "system",
+      "inputs": ["shift_reports_directory"],
+      "outputs": ["compiled_reports"],
+      "conditions": [],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Extract key decisions from ADR.md",
+      "actor": "system",
+      "inputs": ["ADR.md"],
+      "outputs": ["key_decisions"],
+      "conditions": [],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Confirm 100% feature coverage against PRD.md",
+      "actor": "system",
+      "inputs": ["PRD.md", "completed_features"],
+      "outputs": ["coverage_confirmation"],
+      "conditions": ["all_features_implemented"],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Generate deployment instructions",
+      "actor": "system",
+      "inputs": ["project_config"],
+      "outputs": ["deployment_instructions"],
+      "conditions": [],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Generate maintenance guidelines",
+      "actor": "system",
+      "inputs": ["ADR.md", "architecture_notes"],
+      "outputs": ["maintenance_guidelines"],
+      "conditions": [],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "Write README_CLIENT.md with professional handoff documentation",
+      "actor": "system",
+      "inputs": ["compiled_reports", "key_decisions", "deployment_instructions", "maintenance_guidelines"],
+      "outputs": ["README_CLIENT.md"],
+      "conditions": [],
+      "next_steps": ["STEP-013"]
+    },
+    {
+      "id": "STEP-013",
+      "sequence": 13,
+      "action": "Final Manager exits with code 0 signaling project completion",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["exit_code_0"],
+      "conditions": [],
+      "next_steps": []
+    }
+  ],
+  "success_criteria": [
+    "Global RipGrep confirms tenantId in all Prisma queries",
+    "Zod validation verified on all API endpoints",
+    "Named export verification passed (no export default)",
+    "N+1 query detection completed in Service layer",
+    "All SHIFT_REPORT.md files synthesized",
+    "Key decisions extracted from ADR.md",
+    "100% feature coverage confirmed against PRD.md",
+    "README_CLIENT.md includes deployment and maintenance instructions"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "Multi-tenancy audit fails",
+      "recovery_action": "Generate task to add missing tenantId",
+      "escalation": "Block deployment until fixed"
+    },
+    {
+      "error_condition": "Zod validation missing",
+      "recovery_action": "Generate task to add validation",
+      "escalation": "Block deployment until fixed"
+    },
+    {
+      "error_condition": "Default exports found",
+      "recovery_action": "Generate task to refactor exports",
+      "escalation": "Block deployment until fixed"
+    },
+    {
+      "error_condition": "Feature coverage incomplete",
+      "recovery_action": "Identify missing features and add tasks",
+      "escalation": "Return to implementation phase"
+    }
+  ]
+}

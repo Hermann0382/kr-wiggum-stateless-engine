@@ -1,0 +1,142 @@
+{
+  "id": "FLOW-007",
+  "name": "Worker Status Fragment and Self-Destruct",
+  "description": "Worker generates a compact status fragment documenting decisions before terminating and garbage collecting its context.",
+  "feature_id": "FR-003",
+  "story_ids": ["ST-011", "ST-012"],
+  "actor": "system",
+  "trigger": "Worker completes Ralph Wiggum Loop successfully OR max retries exceeded",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Worker compiles list of what was fixed during task",
+      "actor": "system",
+      "inputs": ["edit_history", "error_fixes"],
+      "outputs": ["fixes_summary"],
+      "conditions": [],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Worker documents what was changed with file paths and line numbers",
+      "actor": "system",
+      "inputs": ["git_diff", "modified_files"],
+      "outputs": ["changes_detail"],
+      "conditions": [],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Worker records patterns and approaches used",
+      "actor": "system",
+      "inputs": ["implementation_decisions"],
+      "outputs": ["patterns_used"],
+      "conditions": [],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Worker formats Status Fragment in compact format (<500 tokens)",
+      "actor": "system",
+      "inputs": ["fixes_summary", "changes_detail", "patterns_used"],
+      "outputs": ["formatted_fragment"],
+      "conditions": ["token_count < 500"],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Worker writes Status Fragment to temp file for Manager consumption",
+      "actor": "system",
+      "inputs": ["formatted_fragment"],
+      "outputs": [".agent/status_fragment.md"],
+      "conditions": [],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Worker signals task completion to Orchestrator",
+      "actor": "system",
+      "inputs": ["task_status"],
+      "outputs": ["completion_signal"],
+      "conditions": [],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Worker process terminates (self-destruct)",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["process_terminated"],
+      "conditions": [],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Orchestrator kills Worker process if still alive",
+      "actor": "system",
+      "inputs": ["worker_pid"],
+      "outputs": ["process_killed"],
+      "conditions": [],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "System garbage collects Worker memory completely",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["memory_cleared"],
+      "conditions": ["no_state_persists"],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Telemetry reset to 0% context for Worker indicator",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["telemetry_reset"],
+      "conditions": [],
+      "next_steps": []
+    }
+  ],
+  "success_criteria": [
+    "Status Fragment documents: What was fixed, What was changed, What patterns used",
+    "Status Fragment written to temp file for Manager consumption",
+    "Fragment includes specific file paths and line numbers modified",
+    "Compact format maintained (<500 tokens)",
+    "Process killed after successful commit",
+    "Memory cleared completely with no state persistence",
+    "Telemetry JSON reset to 0% context"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "Status Fragment write fails",
+      "recovery_action": "Output to stdout for Orchestrator capture",
+      "escalation": "Log warning and proceed with termination"
+    },
+    {
+      "error_condition": "Process fails to terminate",
+      "recovery_action": "Orchestrator sends SIGKILL",
+      "escalation": "Force kill and log zombie process"
+    },
+    {
+      "error_condition": "Telemetry reset fails",
+      "recovery_action": "Retry reset up to 3 times",
+      "escalation": "Log error but proceed with next Worker"
+    },
+    {
+      "error_condition": "Status Fragment exceeds 500 tokens",
+      "recovery_action": "Truncate to essential information",
+      "escalation": "Log full fragment to debug file"
+    }
+  ]
+}

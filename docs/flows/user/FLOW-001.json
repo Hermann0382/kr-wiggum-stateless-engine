@@ -1,0 +1,150 @@
+{
+  "id": "FLOW-001",
+  "name": "Brainstorm Intake and PRD Generation",
+  "description": "Converts raw brainstorms, transcripts, and chat logs into structured PRD, ARCHITECTURE, and ROADMAP artifacts through the Distiller component.",
+  "feature_id": "FR-001",
+  "story_ids": ["ST-001", "ST-002", "ST-003", "ST-004"],
+  "actor": "user",
+  "trigger": "User executes /...seed @file command with raw brainstorm file",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "User pastes raw transcript/chat log into .agent/01_raw_brainstorm.txt",
+      "actor": "user",
+      "inputs": ["raw_transcript", "chat_logs", "interview_notes"],
+      "outputs": ["01_raw_brainstorm.txt"],
+      "conditions": [],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "User executes /...seed @.agent/01_raw_brainstorm.txt command",
+      "actor": "user",
+      "inputs": ["slash_command", "file_reference"],
+      "outputs": ["distiller_trigger"],
+      "conditions": [],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Distiller reads brainstorm file and performs voice separation analysis",
+      "actor": "system",
+      "inputs": ["01_raw_brainstorm.txt"],
+      "outputs": ["voice_of_client_data", "voice_of_engineer_data"],
+      "conditions": ["file_size < 50KB", "file_exists"],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Distiller executes minimum 15 RipGrep searches to identify existing patterns",
+      "actor": "system",
+      "inputs": ["codebase", "existing_specs"],
+      "outputs": ["pattern_analysis", "keyword_map"],
+      "conditions": [],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "System filters conversational noise and extracts core requirements",
+      "actor": "system",
+      "inputs": ["voice_of_client_data", "pattern_analysis"],
+      "outputs": ["functional_requirements", "constraints"],
+      "conditions": [],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Distiller generates specs/PRD.md with User Stories, Business Logic, Success Criteria",
+      "actor": "system",
+      "inputs": ["functional_requirements", "constraints"],
+      "outputs": ["specs/PRD.md"],
+      "conditions": [],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Distiller generates specs/index.md (PIN) with keyword-rich index for RipGrep",
+      "actor": "system",
+      "inputs": ["specs/PRD.md", "keyword_map"],
+      "outputs": ["specs/index.md"],
+      "conditions": [],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Distiller breaks implementation into atomic tasks (15-30 min each, 3-5 files, <150 LOC)",
+      "actor": "system",
+      "inputs": ["specs/PRD.md", "dependency_analysis"],
+      "outputs": ["task_breakdown"],
+      "conditions": [],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "System orders tasks by dependency: DB Schema -> Types -> Services -> API -> UI",
+      "actor": "system",
+      "inputs": ["task_breakdown"],
+      "outputs": ["ordered_tasks"],
+      "conditions": [],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Distiller generates IMPLEMENTATION_PLAN.md with checkbox-based task list",
+      "actor": "system",
+      "inputs": ["ordered_tasks"],
+      "outputs": ["IMPLEMENTATION_PLAN.md"],
+      "conditions": [],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "System confirms successful generation and displays summary to user",
+      "actor": "system",
+      "inputs": ["specs/PRD.md", "specs/index.md", "IMPLEMENTATION_PLAN.md"],
+      "outputs": ["success_status", "task_count"],
+      "conditions": ["processing_time < 60s"],
+      "next_steps": []
+    }
+  ],
+  "success_criteria": [
+    "specs/PRD.md generated with complete User Stories and Success Criteria",
+    "specs/index.md generated with keyword-rich content for RipGrep",
+    "IMPLEMENTATION_PLAN.md created with ordered, atomic tasks",
+    "Processing completes within 60 seconds for files under 50KB",
+    "Each task references relevant KreativReason guide"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "Brainstorm file not found",
+      "recovery_action": "Display error message with expected file path",
+      "escalation": "Prompt user to create file at .agent/01_raw_brainstorm.txt"
+    },
+    {
+      "error_condition": "File exceeds 50KB limit",
+      "recovery_action": "Warn user and suggest splitting the file",
+      "escalation": "Process in chunks if user confirms"
+    },
+    {
+      "error_condition": "RipGrep pattern search fails",
+      "recovery_action": "Log error and continue with available patterns",
+      "escalation": "Alert user if <5 patterns found"
+    },
+    {
+      "error_condition": "Processing timeout (>60s)",
+      "recovery_action": "Save partial progress and notify user",
+      "escalation": "Allow retry or manual intervention"
+    }
+  ]
+}

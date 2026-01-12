@@ -1,0 +1,198 @@
+{
+  "id": "SFLOW-001",
+  "name": "Main Pipeline Flow",
+  "description": "Complete end-to-end flow from brainstorm intake through autonomous implementation to production deployment.",
+  "components": ["distiller", "orchestrator", "shift_manager", "worker", "guardrails", "dashboard", "watcher"],
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Brainstorm Intake Phase",
+      "component": "distiller",
+      "inputs": ["raw_brainstorm.txt"],
+      "outputs": ["specs/PRD.md", "specs/index.md", "IMPLEMENTATION_PLAN.md"],
+      "data_flow": ["filesystem_read", "ai_processing", "filesystem_write"],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Orchestrator Initialization",
+      "component": "orchestrator",
+      "inputs": ["IMPLEMENTATION_PLAN.md"],
+      "outputs": ["orchestrator_process"],
+      "data_flow": ["process_spawn", "state_initialization"],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Watcher Server Startup",
+      "component": "watcher",
+      "inputs": ["server_config"],
+      "outputs": ["http_server", "websocket_server", "file_watchers"],
+      "data_flow": ["tcp_bind", "filesystem_watch"],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Shift Manager Spawn",
+      "component": "orchestrator",
+      "inputs": ["SHIFT_HANDOFF.md (if exists)"],
+      "outputs": ["manager_process"],
+      "data_flow": ["process_spawn", "context_injection"],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Task Selection and Worker Assignment",
+      "component": "shift_manager",
+      "inputs": ["IMPLEMENTATION_PLAN.md"],
+      "outputs": ["current_task.md", "worker_spawn_signal"],
+      "data_flow": ["filesystem_read", "filesystem_write", "ipc_signal"],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Worker Spawn and Execution",
+      "component": "worker",
+      "inputs": ["current_task.md", "PRD.md"],
+      "outputs": ["code_changes", "status_fragment.md"],
+      "data_flow": ["process_spawn", "ralph_loop", "git_commit"],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Guardrail Verification",
+      "component": "guardrails",
+      "inputs": ["staged_changes"],
+      "outputs": ["verification_result"],
+      "data_flow": ["compiler_check", "test_run", "lint_audit"],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Telemetry Update",
+      "component": "watcher",
+      "inputs": ["telemetry.json changes"],
+      "outputs": ["websocket_broadcast"],
+      "data_flow": ["filesystem_watch", "json_parse", "socket_emit"],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Dashboard UI Update",
+      "component": "dashboard",
+      "inputs": ["websocket_event"],
+      "outputs": ["ui_render"],
+      "data_flow": ["socket_receive", "dom_update"],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "ADR Logging",
+      "component": "shift_manager",
+      "inputs": ["status_fragment.md"],
+      "outputs": ["ADR.md entry"],
+      "data_flow": ["filesystem_read", "filesystem_append"],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Context Threshold Check",
+      "component": "shift_manager",
+      "inputs": ["token_count"],
+      "outputs": ["continue OR rotate OR complete"],
+      "data_flow": ["internal_calculation"],
+      "next_steps": ["STEP-005", "STEP-012", "STEP-013"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "Shift Rotation",
+      "component": "orchestrator",
+      "inputs": ["exit_code_10", "SHIFT_HANDOFF.md"],
+      "outputs": ["new_manager_spawn"],
+      "data_flow": ["process_kill", "process_spawn"],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-013",
+      "sequence": 13,
+      "action": "Final Deployment and Handoff",
+      "component": "shift_manager",
+      "inputs": ["100% completion"],
+      "outputs": ["README_CLIENT.md", "exit_code_0"],
+      "data_flow": ["filesystem_read", "filesystem_write"],
+      "next_steps": []
+    }
+  ],
+  "data_flow": [
+    {
+      "source": "distiller",
+      "target": "filesystem",
+      "data": "specs and plan files",
+      "protocol": "filesystem"
+    },
+    {
+      "source": "orchestrator",
+      "target": "shift_manager",
+      "data": "spawn signal and handoff",
+      "protocol": "process_spawn"
+    },
+    {
+      "source": "shift_manager",
+      "target": "worker",
+      "data": "task context",
+      "protocol": "process_spawn"
+    },
+    {
+      "source": "worker",
+      "target": "guardrails",
+      "data": "code changes",
+      "protocol": "subprocess"
+    },
+    {
+      "source": "filesystem",
+      "target": "watcher",
+      "data": "file change events",
+      "protocol": "fs.watch"
+    },
+    {
+      "source": "watcher",
+      "target": "dashboard",
+      "data": "telemetry and progress",
+      "protocol": "websocket"
+    }
+  ],
+  "error_handling": [
+    {
+      "component": "orchestrator",
+      "error": "manager_crash",
+      "recovery": "retry with 5s delay, max 3 attempts"
+    },
+    {
+      "component": "worker",
+      "error": "ralph_loop_timeout",
+      "recovery": "kill and spawn fresh worker"
+    },
+    {
+      "component": "guardrails",
+      "error": "verification_fail",
+      "recovery": "block commit, return to edit step"
+    },
+    {
+      "component": "watcher",
+      "error": "socket_disconnect",
+      "recovery": "client auto-reconnect"
+    }
+  ]
+}

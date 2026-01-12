@@ -1,0 +1,181 @@
+{
+  "id": "FLOW-006",
+  "name": "Worker Fresh Boot and Ralph Wiggum Loop Execution",
+  "description": "Worker starts with a clean 0-token context and executes the Ralph Wiggum Loop (Edit -> Build -> Test -> Fix) until task completion.",
+  "feature_id": "FR-003",
+  "story_ids": ["ST-009", "ST-010"],
+  "actor": "system",
+  "trigger": "Orchestrator spawns new Worker instance for atomic task",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Worker process starts with empty context window (0 tokens)",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["fresh_worker_instance"],
+      "conditions": ["no_previous_context", "no_memory_retention"],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Worker receives minimal context injection: PRD.md reference, current_task.md",
+      "actor": "system",
+      "inputs": ["specs/PRD.md", ".agent/current_task.md"],
+      "outputs": ["injected_context"],
+      "conditions": ["context_fill ~5-10%"],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Worker reads task specification and identifies target files",
+      "actor": "system",
+      "inputs": [".agent/current_task.md"],
+      "outputs": ["task_understanding", "target_files"],
+      "conditions": [],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Worker checks for LAST_COMPILER_ERROR.log from previous attempts",
+      "actor": "system",
+      "inputs": [".agent/LAST_COMPILER_ERROR.log"],
+      "outputs": ["previous_error_context"],
+      "conditions": [],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "RALPH LOOP START: Worker executes code edits based on task specification",
+      "actor": "system",
+      "inputs": ["task_understanding", "target_files"],
+      "outputs": ["code_changes"],
+      "conditions": ["edits_atomic", "max_files <= 5", "max_loc <= 150"],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Worker runs LLVM/compiler after edit",
+      "actor": "system",
+      "inputs": ["code_changes"],
+      "outputs": ["compiler_result", "compiler_exit_code"],
+      "conditions": [],
+      "next_steps": ["STEP-007", "STEP-010"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "If compile fails: Capture error to LAST_COMPILER_ERROR.log",
+      "actor": "system",
+      "inputs": ["compiler_result"],
+      "outputs": ["LAST_COMPILER_ERROR.log"],
+      "conditions": ["compiler_exit_code != 0"],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Worker reads error and prepares fix",
+      "actor": "system",
+      "inputs": ["LAST_COMPILER_ERROR.log"],
+      "outputs": ["fix_plan"],
+      "conditions": ["retry_count < 5"],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Increment retry counter and return to Edit step",
+      "actor": "system",
+      "inputs": ["fix_plan"],
+      "outputs": ["retry_count++"],
+      "conditions": [],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "If compile succeeds: Run unit tests",
+      "actor": "system",
+      "inputs": ["compiled_code"],
+      "outputs": ["test_result", "test_exit_code"],
+      "conditions": ["compiler_exit_code = 0"],
+      "next_steps": ["STEP-011", "STEP-012"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "If tests fail: Capture output and return to Edit step",
+      "actor": "system",
+      "inputs": ["test_result"],
+      "outputs": ["test_error_context"],
+      "conditions": ["test_exit_code != 0", "retry_count < 5"],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "If tests pass: RALPH LOOP SUCCESS - Proceed to commit",
+      "actor": "system",
+      "inputs": ["test_result"],
+      "outputs": ["success_signal"],
+      "conditions": ["test_exit_code = 0"],
+      "next_steps": ["STEP-013"]
+    },
+    {
+      "id": "STEP-013",
+      "sequence": 13,
+      "action": "Worker commits changes with descriptive message",
+      "actor": "system",
+      "inputs": ["code_changes", "task_id"],
+      "outputs": ["git_commit"],
+      "conditions": [],
+      "next_steps": ["STEP-014"]
+    },
+    {
+      "id": "STEP-014",
+      "sequence": 14,
+      "action": "Clear LAST_COMPILER_ERROR.log on success",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["cleared_error_log"],
+      "conditions": [],
+      "next_steps": []
+    }
+  ],
+  "success_criteria": [
+    "Worker starts with empty context window (0 tokens)",
+    "Initial context fill approximately 5-10% after injection",
+    "Code edits verified by LLVM/compiler after each change",
+    "Unit tests run after successful compilation",
+    "Loop continues until all tests pass (exit code 0)",
+    "Maximum 5 retry attempts before escalation"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "Retry count exceeds 5",
+      "recovery_action": "Write escalation status and terminate",
+      "escalation": "Manager notified of blocked task"
+    },
+    {
+      "error_condition": "Context fill exceeds 40%",
+      "recovery_action": "Terminate and spawn fresh Worker",
+      "escalation": "Task marked for retry with fresh instance"
+    },
+    {
+      "error_condition": "Target file not found",
+      "recovery_action": "Report to Manager via status fragment",
+      "escalation": "Task may need specification update"
+    },
+    {
+      "error_condition": "Compiler not available",
+      "recovery_action": "Log error and terminate immediately",
+      "escalation": "Pipeline halted until environment fixed"
+    }
+  ]
+}

@@ -1,0 +1,194 @@
+{
+  "artifact_type": "integrations",
+  "version": "2026.1.0",
+  "created_at": "2026-01-11T23:00:00Z",
+  "integrations": [
+    {
+      "id": "INT-001",
+      "name": "Claude Code CLI Integration",
+      "type": "ai_runtime",
+      "description": "Primary AI agent execution environment for Manager and Worker processes",
+      "version": "latest",
+      "purpose": "Provides Claude AI reasoning capabilities for code generation and analysis",
+      "configuration": {
+        "command": "claude-code",
+        "authentication": "pre-configured via CLI login",
+        "context_window": 200000,
+        "model": "claude-3-opus or claude-3.5-sonnet"
+      },
+      "flows_using": ["FLOW-001", "FLOW-002", "FLOW-003", "FLOW-006", "SFLOW-001", "SFLOW-002", "SFLOW-003"],
+      "data_exchanged": ["prompts", "code_changes", "reasoning_output"],
+      "error_handling": "Process restart on crash, context rotation at 60%"
+    },
+    {
+      "id": "INT-002",
+      "name": "Node.js Runtime",
+      "type": "runtime",
+      "description": "Server runtime for Watcher service and WebSocket bridge",
+      "version": ">=18.0.0 LTS",
+      "purpose": "Hosts Express.js server and Socket.io for real-time dashboard updates",
+      "configuration": {
+        "port": 3000,
+        "file_watchers": ["fs.watch", "fs.watchFile"],
+        "event_loop": "libuv"
+      },
+      "flows_using": ["FLOW-012", "FLOW-013", "SFLOW-005", "SFLOW-007"],
+      "data_exchanged": ["telemetry_json", "roadmap_progress", "crisis_signals"],
+      "error_handling": "Graceful shutdown, automatic restart via process manager"
+    },
+    {
+      "id": "INT-003",
+      "name": "Socket.io WebSocket Library",
+      "type": "communication",
+      "description": "Real-time bidirectional communication between Watcher and Dashboard",
+      "version": "^4.6.0",
+      "purpose": "Push telemetry and progress updates to browser clients in real-time",
+      "configuration": {
+        "transport": ["websocket", "polling"],
+        "reconnection": true,
+        "reconnection_delay": 1000
+      },
+      "flows_using": ["FLOW-012", "FLOW-013", "FLOW-014", "SFLOW-005", "SFLOW-006"],
+      "data_exchanged": ["telemetry_events", "roadmap_events", "crisis_events"],
+      "error_handling": "Auto-reconnect with exponential backoff"
+    },
+    {
+      "id": "INT-004",
+      "name": "Express.js Web Framework",
+      "type": "web_server",
+      "description": "HTTP server for static file serving and API endpoints",
+      "version": "^4.18.0",
+      "purpose": "Serve HTML dashboard and handle Crisis Mode API",
+      "configuration": {
+        "static_path": "/public",
+        "port": 3000
+      },
+      "flows_using": ["FLOW-012", "FLOW-013", "SFLOW-005"],
+      "data_exchanged": ["html", "css", "javascript", "api_requests"],
+      "error_handling": "Standard Express error middleware"
+    },
+    {
+      "id": "INT-005",
+      "name": "TypeScript Compiler (tsc)",
+      "type": "build_tool",
+      "description": "Static type checking and compilation for back pressure enforcement",
+      "version": "^5.0.0",
+      "purpose": "Verify type safety before code commit as guardrail check",
+      "configuration": {
+        "config_file": "tsconfig.json",
+        "strict_mode": true
+      },
+      "flows_using": ["FLOW-008", "SFLOW-004"],
+      "data_exchanged": ["source_files", "compiler_output", "error_logs"],
+      "error_handling": "Block commit on error, capture output to LAST_COMPILER_ERROR.log"
+    },
+    {
+      "id": "INT-006",
+      "name": "Vitest/Jest Test Runner",
+      "type": "testing",
+      "description": "Unit test framework for code verification",
+      "version": "latest",
+      "purpose": "Execute test suites as part of Ralph Wiggum Loop",
+      "configuration": {
+        "coverage_threshold_services": 90,
+        "coverage_threshold_controllers": 80
+      },
+      "flows_using": ["FLOW-008", "SFLOW-004"],
+      "data_exchanged": ["test_files", "test_results", "coverage_reports"],
+      "error_handling": "Block commit on test failure, capture output for Worker analysis"
+    },
+    {
+      "id": "INT-007",
+      "name": "Git Version Control",
+      "type": "version_control",
+      "description": "Code versioning and history management",
+      "version": "latest",
+      "purpose": "Track changes, enable Crisis Mode revert, preserve history for ADR",
+      "configuration": {
+        "hooks": "pre-commit for guardrails",
+        "reset_strategy": "hard HEAD on crisis"
+      },
+      "flows_using": ["FLOW-006", "FLOW-014", "SFLOW-004", "SFLOW-006"],
+      "data_exchanged": ["commits", "diffs", "history"],
+      "error_handling": "Preserve history on all operations, clean working directory on crisis"
+    },
+    {
+      "id": "INT-008",
+      "name": "RipGrep (rg)",
+      "type": "search_tool",
+      "description": "Fast regex-based code search for pattern analysis and auditing",
+      "version": "latest",
+      "purpose": "Distiller pattern analysis, KreativReason standards enforcement, PIN navigation",
+      "configuration": {
+        "min_searches_distiller": 15,
+        "search_paths": ["src/", "specs/", ".agent/"]
+      },
+      "flows_using": ["FLOW-001", "FLOW-008", "FLOW-018", "SFLOW-002"],
+      "data_exchanged": ["search_queries", "match_results", "file_locations"],
+      "error_handling": "Continue with available results on partial failure"
+    },
+    {
+      "id": "INT-009",
+      "name": "Prisma ORM",
+      "type": "database",
+      "description": "Database ORM with multi-tenancy enforcement",
+      "version": "^5.0.0",
+      "purpose": "Database operations with mandatory tenantId for all queries",
+      "configuration": {
+        "tenant_id_required": true,
+        "schema_path": "prisma/schema.prisma"
+      },
+      "flows_using": ["FLOW-008", "FLOW-018"],
+      "data_exchanged": ["database_queries", "schema_definitions"],
+      "error_handling": "Block deploy if tenantId missing in any query"
+    },
+    {
+      "id": "INT-010",
+      "name": "Zod Schema Validation",
+      "type": "validation",
+      "description": "Runtime schema validation for API inputs",
+      "version": "^3.22.0",
+      "purpose": "Validate all API endpoint inputs as guardrail requirement",
+      "configuration": {
+        "strict_mode": true,
+        "error_messages": "detailed"
+      },
+      "flows_using": ["FLOW-008", "FLOW-018"],
+      "data_exchanged": ["schemas", "validation_results"],
+      "error_handling": "Return 400 on validation failure, log for audit"
+    },
+    {
+      "id": "INT-011",
+      "name": "Filesystem API",
+      "type": "storage",
+      "description": "Node.js filesystem for state persistence",
+      "version": "native",
+      "purpose": "Read/write markdown state files, telemetry, and logs",
+      "configuration": {
+        "state_directory": ".agent/",
+        "telemetry_path": ".ralph/telemetry.json",
+        "watch_method": "fs.watch"
+      },
+      "flows_using": ["FLOW-011", "SFLOW-005", "SFLOW-007"],
+      "data_exchanged": ["markdown_files", "json_files", "log_files"],
+      "error_handling": "Retry on EBUSY, create directories on ENOENT"
+    },
+    {
+      "id": "INT-012",
+      "name": "Process Management (Bash)",
+      "type": "orchestration",
+      "description": "Bash scripts for process lifecycle management",
+      "version": "bash 4+",
+      "purpose": "orchestrate.sh manages Manager/Worker spawning and rotation",
+      "configuration": {
+        "exit_code_complete": 0,
+        "exit_code_rotate": 10,
+        "max_retries": 3,
+        "retry_delay_seconds": 5
+      },
+      "flows_using": ["FLOW-009", "FLOW-010", "FLOW-014", "SFLOW-001", "SFLOW-003"],
+      "data_exchanged": ["exit_codes", "process_ids", "environment_variables"],
+      "error_handling": "pkill on crisis, retry with delay on crash"
+    }
+  ]
+}

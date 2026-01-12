@@ -1,0 +1,163 @@
+{
+  "id": "FLOW-016",
+  "name": "Shift Report Generation",
+  "description": "End-of-shift documentation that compresses work done into high-density summaries for successor Managers.",
+  "feature_id": "FR-011",
+  "story_ids": ["ST-038", "ST-039"],
+  "actor": "system",
+  "trigger": "Shift Manager reaches 60% context threshold OR manual report request",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Manager initiates shift report generation",
+      "actor": "system",
+      "inputs": ["rotation_trigger"],
+      "outputs": ["report_job"],
+      "conditions": [],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Compile Executive Summary of shift accomplishments",
+      "actor": "system",
+      "inputs": ["completed_tasks", "session_history"],
+      "outputs": ["executive_summary"],
+      "conditions": [],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "List all completed tasks with verification status",
+      "actor": "system",
+      "inputs": ["IMPLEMENTATION_PLAN.md", "git_log"],
+      "outputs": ["completed_tasks_list"],
+      "conditions": [],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Gather Strategic Memory from ADR entries",
+      "actor": "system",
+      "inputs": ["ADR.md"],
+      "outputs": ["strategic_memory"],
+      "conditions": [],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "List architectural decisions made during shift",
+      "actor": "system",
+      "inputs": ["ADR.md_filtered"],
+      "outputs": ["decisions_list"],
+      "conditions": [],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Identify persistent friction points and blockers",
+      "actor": "system",
+      "inputs": ["error_logs", "retry_counts"],
+      "outputs": ["friction_points"],
+      "conditions": [],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Link report to current roadmap position",
+      "actor": "system",
+      "inputs": ["IMPLEMENTATION_PLAN.md"],
+      "outputs": ["roadmap_link"],
+      "conditions": [],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Verify Definition of Done: LLVM/Compiler signal pass",
+      "actor": "system",
+      "inputs": ["compiler_status"],
+      "outputs": ["compiler_verification"],
+      "conditions": [],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Verify KreativReason standards compliance",
+      "actor": "system",
+      "inputs": ["audit_results"],
+      "outputs": ["standards_verification"],
+      "conditions": [],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Verify all unit tests pass",
+      "actor": "system",
+      "inputs": ["test_results"],
+      "outputs": ["test_verification"],
+      "conditions": [],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Document known issues and TODOs",
+      "actor": "system",
+      "inputs": ["open_issues"],
+      "outputs": ["issues_list"],
+      "conditions": [],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "Write SHIFT_REPORT.md with complete documentation",
+      "actor": "system",
+      "inputs": ["all_report_sections"],
+      "outputs": ["SHIFT_REPORT.md"],
+      "conditions": [],
+      "next_steps": []
+    }
+  ],
+  "success_criteria": [
+    "Report includes: Executive Summary, Completed Tasks, Strategic Memory",
+    "Architectural decisions from shift listed",
+    "Persistent friction points identified",
+    "Report links to current roadmap position",
+    "LLVM/Compiler signal verified pass",
+    "KreativReason standards compliance confirmed",
+    "All unit tests verified passing",
+    "Known issues and TODOs documented"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "Compiler verification fails",
+      "recovery_action": "Document failure in issues section",
+      "escalation": "Mark report as incomplete"
+    },
+    {
+      "error_condition": "Test verification fails",
+      "recovery_action": "List failing tests in issues",
+      "escalation": "Successor must address before continuing"
+    },
+    {
+      "error_condition": "ADR.md inaccessible",
+      "recovery_action": "Generate from git commit history",
+      "escalation": "Mark strategic memory as incomplete"
+    },
+    {
+      "error_condition": "Report write fails",
+      "recovery_action": "Output to stdout for manual capture",
+      "escalation": "Handoff proceeds with minimal context"
+    }
+  ]
+}

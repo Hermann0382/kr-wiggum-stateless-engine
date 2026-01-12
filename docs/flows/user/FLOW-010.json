@@ -1,0 +1,152 @@
+{
+  "id": "FLOW-010",
+  "name": "Orchestrator Worker Spawning and Error Recovery",
+  "description": "Spawns stateless Workers for each task ensuring fresh context, handles Worker lifecycle, and implements error recovery with retry logic.",
+  "feature_id": "FR-005",
+  "story_ids": ["ST-017", "ST-018"],
+  "actor": "system",
+  "trigger": "Shift Manager signals need for new Worker instance",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Orchestrator receives Worker spawn request from Manager",
+      "actor": "system",
+      "inputs": ["spawn_request", "task_context"],
+      "outputs": ["spawn_job"],
+      "conditions": [],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Prepare minimal context injection for Worker",
+      "actor": "system",
+      "inputs": ["task_context"],
+      "outputs": ["context_injection"],
+      "conditions": ["injection_size < 10% context"],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Spawn new Claude Code instance for Worker",
+      "actor": "system",
+      "inputs": ["context_injection"],
+      "outputs": ["worker_pid", "worker_process"],
+      "conditions": [],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Monitor Worker process execution",
+      "actor": "system",
+      "inputs": ["worker_process"],
+      "outputs": ["worker_stdout", "worker_stderr"],
+      "conditions": [],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Wait for Worker completion or timeout (30 min max)",
+      "actor": "system",
+      "inputs": ["worker_process", "timeout_30min"],
+      "outputs": ["worker_exit_code", "completion_reason"],
+      "conditions": [],
+      "next_steps": ["STEP-006", "STEP-007", "STEP-010"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "If Worker succeeded: Kill process and reset telemetry",
+      "actor": "system",
+      "inputs": ["worker_exit_code"],
+      "outputs": ["process_terminated"],
+      "conditions": ["worker_exit_code = 0"],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "If Worker failed: Capture error state",
+      "actor": "system",
+      "inputs": ["worker_exit_code", "worker_stderr"],
+      "outputs": ["error_capture"],
+      "conditions": ["worker_exit_code != 0"],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Reset telemetry.json to 0% Worker context",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["telemetry_reset"],
+      "conditions": [],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Implement error recovery: 5s sleep before retry decision",
+      "actor": "system",
+      "inputs": ["error_capture", "retry_count"],
+      "outputs": ["retry_decision"],
+      "conditions": [],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "If retry available (count < 3): Spawn new Worker",
+      "actor": "system",
+      "inputs": ["retry_decision"],
+      "outputs": ["retry_spawn"],
+      "conditions": ["consecutive_crashes < 3"],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Signal Manager with Worker completion status",
+      "actor": "system",
+      "inputs": ["worker_exit_code"],
+      "outputs": ["completion_signal"],
+      "conditions": [],
+      "next_steps": []
+    }
+  ],
+  "success_criteria": [
+    "New Claude Code instance spawned for each task",
+    "Only minimal context injection passed to Worker",
+    "Worker process killed after task completion",
+    "telemetry.json reset to 0% after Worker death",
+    "5-second sleep implemented before retry",
+    "Maximum 3 consecutive crash retries before halt",
+    "Crash information logged for debugging"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "Worker spawn fails",
+      "recovery_action": "Retry spawn with 5s delay",
+      "escalation": "Halt after 3 consecutive spawn failures"
+    },
+    {
+      "error_condition": "Worker timeout (>30 min)",
+      "recovery_action": "Force kill and log timeout",
+      "escalation": "Mark task as blocked"
+    },
+    {
+      "error_condition": "Consecutive crashes exceed 3",
+      "recovery_action": "Halt Worker spawning",
+      "escalation": "Notify Manager of persistent failure"
+    },
+    {
+      "error_condition": "Telemetry reset fails",
+      "recovery_action": "Retry reset up to 3 times",
+      "escalation": "Log error and continue with warning"
+    }
+  ]
+}

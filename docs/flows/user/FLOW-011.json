@@ -1,0 +1,153 @@
+{
+  "id": "FLOW-011",
+  "name": "File-Based State Management",
+  "description": "Persistent memory system using markdown files as the 'brain outside the AI' to maintain coherence across stateless agent lifetimes.",
+  "feature_id": "FR-006",
+  "story_ids": ["ST-019", "ST-020", "ST-021"],
+  "actor": "system",
+  "trigger": "Any agent needs to read or write project state",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Agent identifies state file needed for operation",
+      "actor": "system",
+      "inputs": ["operation_type"],
+      "outputs": ["target_file_path"],
+      "conditions": [],
+      "next_steps": ["STEP-002", "STEP-005", "STEP-008"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "IMPLEMENTATION_PLAN.md: Read current task list with checkboxes",
+      "actor": "system",
+      "inputs": ["IMPLEMENTATION_PLAN.md"],
+      "outputs": ["task_list", "progress_status"],
+      "conditions": [],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Parse [ ] and [x] checkbox syntax for task status",
+      "actor": "system",
+      "inputs": ["task_list"],
+      "outputs": ["unchecked_count", "checked_count", "progress_percent"],
+      "conditions": [],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Update task status: Mark [x] for completed, [ ] for pending",
+      "actor": "system",
+      "inputs": ["task_id", "new_status"],
+      "outputs": ["updated_IMPLEMENTATION_PLAN.md"],
+      "conditions": ["task_has_unique_id"],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "ADR.md: Read architectural decision history",
+      "actor": "system",
+      "inputs": ["ADR.md"],
+      "outputs": ["decision_history"],
+      "conditions": [],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Search ADR entries via RipGrep keywords",
+      "actor": "system",
+      "inputs": ["search_keywords"],
+      "outputs": ["matching_entries"],
+      "conditions": [],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Append new ADR entry with commit hash, task ID, rationale",
+      "actor": "system",
+      "inputs": ["new_decision", "commit_hash", "task_id"],
+      "outputs": ["updated_ADR.md"],
+      "conditions": ["entry_has_rationale"],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "LAST_COMPILER_ERROR.log: Check for previous error state",
+      "actor": "system",
+      "inputs": ["LAST_COMPILER_ERROR.log"],
+      "outputs": ["error_context"],
+      "conditions": [],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Truncate error to essential information (<1000 tokens)",
+      "actor": "system",
+      "inputs": ["raw_error"],
+      "outputs": ["truncated_error"],
+      "conditions": ["token_count < 1000"],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Clear error log after successful compilation",
+      "actor": "system",
+      "inputs": ["compilation_success"],
+      "outputs": ["cleared_error_log"],
+      "conditions": ["compiler_exit_code = 0"],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Confirm state file operation completed",
+      "actor": "system",
+      "inputs": ["operation_result"],
+      "outputs": ["confirmation"],
+      "conditions": [],
+      "next_steps": []
+    }
+  ],
+  "success_criteria": [
+    "IMPLEMENTATION_PLAN.md uses [ ] and [x] checkbox syntax",
+    "Tasks ordered by dependency in plan",
+    "Each task has unique ID (ST-01, ST-02, etc.)",
+    "Progress calculable via regex matching",
+    "ADR.md maintains chronological log with commit links",
+    "ADR entries include rationale, not just description",
+    "LAST_COMPILER_ERROR.log truncated to <1000 tokens",
+    "Error log cleared after successful compilation"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "State file not found",
+      "recovery_action": "Create file with empty/default template",
+      "escalation": "Log warning about missing state"
+    },
+    {
+      "error_condition": "File write permission denied",
+      "recovery_action": "Retry with elevated permissions",
+      "escalation": "Store in alternative location"
+    },
+    {
+      "error_condition": "Checkbox parsing fails",
+      "recovery_action": "Use fallback regex pattern",
+      "escalation": "Report malformed plan file"
+    },
+    {
+      "error_condition": "Concurrent write conflict",
+      "recovery_action": "Retry with file locking",
+      "escalation": "Queue write for later execution"
+    }
+  ]
+}

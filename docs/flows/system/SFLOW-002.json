@@ -1,0 +1,192 @@
+{
+  "id": "SFLOW-002",
+  "name": "Distiller Processing Pipeline",
+  "description": "System flow for converting raw brainstorms into structured specifications through AI-driven analysis.",
+  "components": ["cli", "distiller_agent", "ripgrep", "filesystem", "ai_model"],
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "CLI receives /...seed command",
+      "component": "cli",
+      "inputs": ["command_string", "file_reference"],
+      "outputs": ["distiller_trigger"],
+      "data_flow": ["command_parse"],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Load brainstorm file from filesystem",
+      "component": "filesystem",
+      "inputs": ["file_path"],
+      "outputs": ["raw_content"],
+      "data_flow": ["filesystem_read"],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Voice separation analysis",
+      "component": "distiller_agent",
+      "inputs": ["raw_content"],
+      "outputs": ["voice_of_client", "voice_of_engineer"],
+      "data_flow": ["ai_processing"],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Execute RipGrep pattern analysis (min 15 searches)",
+      "component": "ripgrep",
+      "inputs": ["codebase", "search_patterns"],
+      "outputs": ["pattern_matches", "keyword_map"],
+      "data_flow": ["subprocess_exec"],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Extract functional requirements",
+      "component": "distiller_agent",
+      "inputs": ["voice_of_client", "pattern_matches"],
+      "outputs": ["requirements_list"],
+      "data_flow": ["ai_processing"],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Generate PRD structure",
+      "component": "distiller_agent",
+      "inputs": ["requirements_list", "constraints"],
+      "outputs": ["prd_structure"],
+      "data_flow": ["ai_processing"],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Write specs/PRD.md",
+      "component": "filesystem",
+      "inputs": ["prd_structure"],
+      "outputs": ["specs/PRD.md"],
+      "data_flow": ["filesystem_write"],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Generate keyword-rich index",
+      "component": "distiller_agent",
+      "inputs": ["prd_structure", "keyword_map"],
+      "outputs": ["index_structure"],
+      "data_flow": ["ai_processing"],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Write specs/index.md (PIN)",
+      "component": "filesystem",
+      "inputs": ["index_structure"],
+      "outputs": ["specs/index.md"],
+      "data_flow": ["filesystem_write"],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Dependency analysis for task ordering",
+      "component": "distiller_agent",
+      "inputs": ["requirements_list"],
+      "outputs": ["dependency_graph"],
+      "data_flow": ["ai_processing"],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Atomic task breakdown",
+      "component": "distiller_agent",
+      "inputs": ["dependency_graph"],
+      "outputs": ["atomic_tasks"],
+      "data_flow": ["ai_processing"],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "Write IMPLEMENTATION_PLAN.md",
+      "component": "filesystem",
+      "inputs": ["atomic_tasks"],
+      "outputs": ["IMPLEMENTATION_PLAN.md"],
+      "data_flow": ["filesystem_write"],
+      "next_steps": ["STEP-013"]
+    },
+    {
+      "id": "STEP-013",
+      "sequence": 13,
+      "action": "Output success status to CLI",
+      "component": "cli",
+      "inputs": ["generation_result"],
+      "outputs": ["status_message"],
+      "data_flow": ["stdout"],
+      "next_steps": []
+    }
+  ],
+  "data_flow": [
+    {
+      "source": "cli",
+      "target": "filesystem",
+      "data": "file reference",
+      "protocol": "argument_pass"
+    },
+    {
+      "source": "filesystem",
+      "target": "distiller_agent",
+      "data": "raw_content",
+      "protocol": "memory_buffer"
+    },
+    {
+      "source": "distiller_agent",
+      "target": "ripgrep",
+      "data": "search_queries",
+      "protocol": "subprocess"
+    },
+    {
+      "source": "distiller_agent",
+      "target": "ai_model",
+      "data": "prompts",
+      "protocol": "api_call"
+    },
+    {
+      "source": "distiller_agent",
+      "target": "filesystem",
+      "data": "generated_files",
+      "protocol": "filesystem_write"
+    }
+  ],
+  "error_handling": [
+    {
+      "component": "filesystem",
+      "error": "file_not_found",
+      "recovery": "display error with expected path"
+    },
+    {
+      "component": "ripgrep",
+      "error": "no_patterns_found",
+      "recovery": "continue with minimal pattern context"
+    },
+    {
+      "component": "distiller_agent",
+      "error": "ai_timeout",
+      "recovery": "retry with exponential backoff"
+    },
+    {
+      "component": "filesystem",
+      "error": "write_permission_denied",
+      "recovery": "attempt elevated permissions or alternate path"
+    }
+  ]
+}

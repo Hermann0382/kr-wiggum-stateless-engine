@@ -1,0 +1,66 @@
+{
+  "artifact_type": "flow_index",
+  "project_name": "KR-Wiggum Stateless Engine",
+  "version": "2026.1.0",
+  "created_at": "2026-01-11T23:15:00Z",
+  "counts": {
+    "user_flows": 18,
+    "system_flows": 8,
+    "total_flows": 26
+  },
+  "directories": {
+    "user_flows": "user/",
+    "system_flows": "system/",
+    "final_flow": "final_flow.json"
+  },
+  "prd_reference": {
+    "path": "../prd.json",
+    "features_count": 13,
+    "user_stories_count": 43
+  },
+  "coverage": {
+    "features_covered": ["FR-001", "FR-002", "FR-003", "FR-004", "FR-005", "FR-006", "FR-007", "FR-008", "FR-009", "FR-010", "FR-011", "FR-012", "FR-013"],
+    "user_stories_covered": [
+      "ST-001", "ST-002", "ST-003", "ST-004", "ST-005", "ST-006", "ST-007", "ST-008",
+      "ST-009", "ST-010", "ST-011", "ST-012", "ST-013", "ST-014", "ST-015", "ST-016",
+      "ST-017", "ST-018", "ST-019", "ST-020", "ST-021", "ST-022", "ST-023", "ST-024",
+      "ST-025", "ST-026", "ST-027", "ST-028", "ST-029", "ST-030", "ST-031", "ST-032",
+      "ST-033", "ST-034", "ST-035", "ST-036", "ST-037", "ST-038", "ST-039", "ST-040",
+      "ST-041", "ST-042", "ST-043"
+    ]
+  },
+  "user_flow_files": [
+    {"id": "FLOW-001", "name": "Brainstorm Intake and PRD Generation", "path": "user/FLOW-001.json", "sha256": "30c0f977f8ce8b7dd5ade16746f1ba8dd800df963616a3b81a5c3f0a7b637271", "bytes": 5332, "feature_id": "FR-001", "story_ids": ["ST-001", "ST-002", "ST-003", "ST-004"]},
+    {"id": "FLOW-002", "name": "Shift Manager Context Monitoring", "path": "user/FLOW-002.json", "sha256": "95cdb326ca3cec1624a2bb8b4f409664b9f05a0c789cb3c4bb599313a12b4af7", "bytes": 4662, "feature_id": "FR-002", "story_ids": ["ST-005"]},
+    {"id": "FLOW-003", "name": "Worker Task Assignment", "path": "user/FLOW-003.json", "sha256": "8a6e656b75b02de6c01456830469593974e24b02180404e94443ba2d4d00bacc", "bytes": 4682, "feature_id": "FR-002", "story_ids": ["ST-006"]},
+    {"id": "FLOW-004", "name": "ADR Management", "path": "user/FLOW-004.json", "sha256": "0ffe77dab74280e5041100c6f2dd640e621e2f4963cc3cbba79c95bcc4bbc40b", "bytes": 3661, "feature_id": "FR-002", "story_ids": ["ST-007"]},
+    {"id": "FLOW-005", "name": "Shift Handoff Protocol", "path": "user/FLOW-005.json", "sha256": "a63c633de03361574b00dda49ba9fe934322d10c29aff1731f670fe2287bda17", "bytes": 4514, "feature_id": "FR-002", "story_ids": ["ST-008"]},
+    {"id": "FLOW-006", "name": "Worker Fresh Boot and Ralph Wiggum Loop Execution", "path": "user/FLOW-006.json", "sha256": "2ffdfc5411b853c73a6fe8ecf32fb06cd5bc71b1f32b26a60ecd0f27c9ca69d5", "bytes": 5931, "feature_id": "FR-003", "story_ids": ["ST-009", "ST-010"]},
+    {"id": "FLOW-007", "name": "Worker Status Fragment and Self-Destruct", "path": "user/FLOW-007.json", "sha256": "60729ffadaba573cb385bf2ea948ed9e719b4632857314930de4e2428348365f", "bytes": 4549, "feature_id": "FR-003", "story_ids": ["ST-011", "ST-012"]},
+    {"id": "FLOW-008", "name": "Guardrail System Verification", "path": "user/FLOW-008.json", "sha256": "2c3fa548d30b5d682d1eda712cfc03b42d3a8a67bb27e644ef65264946f4b5cd", "bytes": 5523, "feature_id": "FR-004", "story_ids": ["ST-013", "ST-014", "ST-015"]},
+    {"id": "FLOW-009", "name": "Orchestrator Manager Lifecycle", "path": "user/FLOW-009.json", "sha256": "121c018d82c5e798722b254a0330052ddbdd0ce2e938ffd1157355f489c6f2db", "bytes": 4992, "feature_id": "FR-005", "story_ids": ["ST-016"]},
+    {"id": "FLOW-010", "name": "Orchestrator Worker Spawning and Error Recovery", "path": "user/FLOW-010.json", "sha256": "c447cbd3530c6591807ab036226c876747b611e1b3cb33e04ef594696cf0d517", "bytes": 4806, "feature_id": "FR-005", "story_ids": ["ST-017", "ST-018"]},
+    {"id": "FLOW-011", "name": "File-Based State Management", "path": "user/FLOW-011.json", "sha256": "a359cc39207e486b157aca214953da7ade98471c9482878137b6c1a80362442c", "bytes": 4910, "feature_id": "FR-006", "story_ids": ["ST-019", "ST-020", "ST-021"]},
+    {"id": "FLOW-012", "name": "Dashboard Visualization", "path": "user/FLOW-012.json", "sha256": "1f030135188814e54d479a2b055c9218b08cd535b503ef258a7c809c8331bf68", "bytes": 5290, "feature_id": "FR-007", "story_ids": ["ST-022", "ST-023", "ST-024", "ST-025"]},
+    {"id": "FLOW-013", "name": "WebSocket Bridge Data Flow", "path": "user/FLOW-013.json", "sha256": "334f701e0e936b6c3048a10734892a89be82652dd2b94e56a24591a57f2be9fb", "bytes": 5006, "feature_id": "FR-008", "story_ids": ["ST-026", "ST-027", "ST-028"]},
+    {"id": "FLOW-014", "name": "Crisis Mode Activation", "path": "user/FLOW-014.json", "sha256": "fc801127be7da15b713d435323a83852ee339f085e457e51876d5ffb15fb75b5", "bytes": 5337, "feature_id": "FR-009", "story_ids": ["ST-029", "ST-030", "ST-031", "ST-032"]},
+    {"id": "FLOW-015", "name": "Slash Command Execution", "path": "user/FLOW-015.json", "sha256": "0cfef78f68b511ca77a33c175d4cda0dd6c0c02dd44dbb0c4fa4e3381a09f673", "bytes": 5132, "feature_id": "FR-010", "story_ids": ["ST-033", "ST-034", "ST-035", "ST-036", "ST-037"]},
+    {"id": "FLOW-016", "name": "Shift Report Generation", "path": "user/FLOW-016.json", "sha256": "92e19546fa9a87500aa20adfc14032c8202b8fdd727c136c844701477c17b82e", "bytes": 4924, "feature_id": "FR-011", "story_ids": ["ST-038", "ST-039"]},
+    {"id": "FLOW-017", "name": "Post-Crisis Recovery Analysis", "path": "user/FLOW-017.json", "sha256": "5e90ccb8097e379c3b91d4572aab0f51a43de56953f4b6810f0236a6426a4240", "bytes": 5083, "feature_id": "FR-012", "story_ids": ["ST-040", "ST-041"]},
+    {"id": "FLOW-018", "name": "Final Deployment and Client Handoff", "path": "user/FLOW-018.json", "sha256": "c286099236d9686e8ec3bb9a1baa966aef6dd7bc67c5cdf6cd42111c3447c603", "bytes": 5439, "feature_id": "FR-013", "story_ids": ["ST-042", "ST-043"]}
+  ],
+  "system_flow_files": [
+    {"id": "SFLOW-001", "name": "Main Pipeline Flow", "path": "system/SFLOW-001.json", "sha256": "a148814c958e071d1204db081749e7dd58f0b3ebcbbcf2ffed50d672125c923f", "bytes": 5884},
+    {"id": "SFLOW-002", "name": "Distiller Processing Pipeline", "path": "system/SFLOW-002.json", "sha256": "c3f663859a3e2584a51d45a2b7199c14bd13b49a739485ac56f3081b6596f2ea", "bytes": 5412},
+    {"id": "SFLOW-003", "name": "Manager-Worker Communication Flow", "path": "system/SFLOW-003.json", "sha256": "3b26dde10f120eddabaa39449521ff3999dc6a18d77005acde45b82cac4c1692", "bytes": 5878},
+    {"id": "SFLOW-004", "name": "Ralph Wiggum Loop - Edit Build Test Cycle", "path": "system/SFLOW-004.json", "sha256": "c04e48ae431ef30cbd56d941d877d3fe8deb6d38859285832b63e3bed483de97", "bytes": 6048},
+    {"id": "SFLOW-005", "name": "Dashboard Data Flow", "path": "system/SFLOW-005.json", "sha256": "823d27949a9f7ddfa358ec239498055b7a066955ff3f9c2549691d7893959e39", "bytes": 5105},
+    {"id": "SFLOW-006", "name": "Crisis Mode System Flow", "path": "system/SFLOW-006.json", "sha256": "bc12f5bac7210da0175c9955c728849952c419791c0c92281a9ea8693200d349", "bytes": 5729},
+    {"id": "SFLOW-007", "name": "File Watcher Event Chain", "path": "system/SFLOW-007.json", "sha256": "8820d0317ed7fd1ee38562d3ca88429525d898251c9a3a144b649e06724d8782", "bytes": 5262},
+    {"id": "SFLOW-008", "name": "Error Recovery Chain", "path": "system/SFLOW-008.json", "sha256": "e9586bd198eb5a8adc6048785f6371c43b366ae89a28f720c1f2025522e9d4b8", "bytes": 4979}
+  ],
+  "supporting_files": [
+    {"name": "integrations.json", "path": "integrations.json", "sha256": "8bd464f88c1262aa2417e3cf0827c3397a73a0d033ab2648299df6aa04118eca", "bytes": 7800},
+    {"name": "assumptions.json", "path": "assumptions.json", "sha256": "96d563ef96f1c80370dce8d361934f04e5dd55c40d6c07b87e8ce99e0bcf0d8a", "bytes": 8189}
+  ]
+}

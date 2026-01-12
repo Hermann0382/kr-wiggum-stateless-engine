@@ -1,0 +1,1568 @@
+{
+  "artifact_type": "journey",
+  "status": "complete",
+  "validation": "passed",
+  "approval_required": true,
+  "approvers": ["Cynthia", "Hassan"],
+  "next_phase": "task_planning",
+  "data": {
+    "project_name": "KR-Wiggum Stateless Engine",
+    "version": "2026.1.0",
+    "created_at": "2026-01-11T23:45:00Z",
+    "personas": [
+      {
+        "id": "PERSONA-001",
+        "name": "The Locomotive Engineer",
+        "description": "Software engineer overseeing autonomous AI development pipeline. Primary system operator who transforms brainstorms into production code at $10.42/hour with minimal manual intervention.",
+        "goals": [
+          "Transform raw brainstorms into production-ready code autonomously",
+          "Maintain visibility into pipeline progress without constant monitoring",
+          "Intervene only when necessary (Crisis Mode)",
+          "Achieve consistent output quality at predictable cost",
+          "Minimize context rot and hallucination spirals"
+        ],
+        "pain_points": [
+          "Context rot degrades AI reasoning over extended sessions",
+          "Hallucination spirals when AI enters Dumb Zone (>60% context)",
+          "Manual oversight burden for autonomous systems",
+          "Difficulty tracking what decisions were made and why",
+          "Recovery complexity after system failures"
+        ],
+        "context": "Works primarily from CLI and HTML Dashboard. Expects autonomous operation with clear visibility. Needs immediate Crisis intervention capability. Values documentation and architectural decision preservation."
+      },
+      {
+        "id": "PERSONA-002",
+        "name": "The Project Lead",
+        "description": "Technical lead responsible for reviewing output quality, ensuring architectural consistency, and maintaining KreativReason development standards across autonomous runs.",
+        "goals": [
+          "Ensure architectural consistency across automated development",
+          "Verify KreativReason standards compliance",
+          "Review ADRs for decision quality and rationale",
+          "Validate final deliverables before client handoff",
+          "Understand project history through Shift Reports"
+        ],
+        "pain_points": [
+          "Difficulty understanding decisions made by stateless agents",
+          "Ensuring multi-tenancy and security standards are met",
+          "Validating test coverage and quality metrics",
+          "Tracking architectural drift across multiple agent rotations",
+          "Time required for comprehensive quality reviews"
+        ],
+        "context": "Reviews ADR.md, Shift Reports, and Final Sanity Check results. Focuses on quality assurance rather than day-to-day operation. Approves final deployment artifacts."
+      },
+      {
+        "id": "PERSONA-003",
+        "name": "The Client",
+        "description": "End recipient of the delivered software who needs documented, production-ready application with clear deployment and maintenance instructions.",
+        "goals": [
+          "Receive fully documented production-ready application",
+          "Understand how to deploy and maintain the delivered software",
+          "Know what was built and why (architectural decisions)",
+          "Have clear contact points for questions",
+          "Confidence in code quality and security"
+        ],
+        "pain_points": [
+          "Lack of visibility into development process",
+          "Unclear deployment procedures",
+          "Missing maintenance documentation",
+          "No understanding of architectural decisions",
+          "Uncertainty about code quality and testing"
+        ],
+        "context": "Receives README_CLIENT.md and deployment artifacts. Does not interact with pipeline directly. Requires professional handoff documentation synthesized from Shift Reports and ADRs."
+      }
+    ],
+    "journeys": [
+      {
+        "id": "JRN-001",
+        "name": "First Project Setup Journey",
+        "description": "Engineer initializes a new project, seeds specifications from brainstorm, reviews the generated PRD, and starts the autonomous loop for the first time.",
+        "persona_id": "PERSONA-001",
+        "flow_ids": ["FLOW-001", "FLOW-015"],
+        "story_ids": ["ST-001", "ST-002", "ST-003", "ST-004", "ST-033", "ST-035"],
+        "phases": [
+          {
+            "id": "PHASE-001",
+            "name": "Project Initialization",
+            "description": "Engineer creates project structure and prepares brainstorm input for the Distiller.",
+            "duration_estimate": "5-10 minutes",
+            "touchpoints": [
+              {
+                "id": "TP-001",
+                "name": "Terminal - Project Directory Creation",
+                "type": "cli",
+                "description": "Engineer creates project directory and initializes .agent folder structure for state management.",
+                "flow_step_id": "FLOW-001:STEP-001",
+                "data_entities": ["ENT-001"],
+                "user_actions": ["mkdir", "cd", "init_git"],
+                "system_actions": ["create_directory", "verify_structure"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": ["Provide project scaffold command to automate directory structure creation"]
+              },
+              {
+                "id": "TP-002",
+                "name": "Brainstorm File Creation",
+                "type": "cli",
+                "description": "Engineer pastes raw interview transcripts, chat logs, or notes into .agent/01_raw_brainstorm.txt for Distiller processing.",
+                "flow_step_id": "FLOW-001:STEP-001",
+                "data_entities": ["ENT-001"],
+                "user_actions": ["create_file", "paste_content", "save"],
+                "system_actions": ["validate_file_size"],
+                "emotional_state": "curious",
+                "pain_points": ["File size limits unclear until error", "Format requirements not obvious"],
+                "opportunities": ["Provide template with example format", "Show real-time file size indicator", "Support multiple input formats (audio transcripts, chat exports)"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-002",
+            "name": "Specification Distillation",
+            "description": "System processes brainstorm through the Distiller to generate PRD, PIN, and atomic task breakdown.",
+            "duration_estimate": "30-60 seconds",
+            "touchpoints": [
+              {
+                "id": "TP-003",
+                "name": "Slash Command Execution",
+                "type": "cli",
+                "description": "Engineer executes /...seed @.agent/01_raw_brainstorm.txt to trigger Distiller processing.",
+                "flow_step_id": "FLOW-001:STEP-002",
+                "data_entities": ["ENT-001", "ENT-002"],
+                "user_actions": ["type_command", "execute"],
+                "system_actions": ["parse_command", "locate_file", "trigger_distiller"],
+                "emotional_state": "curious",
+                "pain_points": ["Command syntax must be memorized"],
+                "opportunities": ["Tab completion for file paths", "Command history and suggestions"]
+              },
+              {
+                "id": "TP-004",
+                "name": "Distiller Processing Feedback",
+                "type": "cli",
+                "description": "System shows progress as Distiller performs voice separation, RipGrep pattern analysis (15+ searches), and requirement extraction.",
+                "flow_step_id": "FLOW-001:STEP-003",
+                "data_entities": ["ENT-002", "ENT-003"],
+                "user_actions": ["observe", "wait"],
+                "system_actions": ["display_progress", "show_step_count"],
+                "emotional_state": "curious",
+                "pain_points": ["Silent processing with no feedback creates anxiety", "No estimated completion time"],
+                "opportunities": ["Real-time progress bar", "Show RipGrep search count", "Display extracted requirements count"]
+              },
+              {
+                "id": "TP-005",
+                "name": "Specification Generation Complete",
+                "type": "cli",
+                "description": "System confirms generation of specs/PRD.md, specs/index.md (PIN), and IMPLEMENTATION_PLAN.md with task count.",
+                "flow_step_id": "FLOW-001:STEP-011",
+                "data_entities": ["ENT-002", "ENT-003", "ENT-004"],
+                "user_actions": ["review_output"],
+                "system_actions": ["display_summary", "show_task_count"],
+                "emotional_state": "satisfied",
+                "pain_points": [],
+                "opportunities": ["Open PRD in editor automatically", "Show visual task dependency graph"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-003",
+            "name": "PRD Review and Approval",
+            "description": "Engineer reviews generated specifications to ensure requirements were correctly extracted before starting autonomous run.",
+            "duration_estimate": "10-30 minutes",
+            "touchpoints": [
+              {
+                "id": "TP-006",
+                "name": "PRD Document Review",
+                "type": "editor",
+                "description": "Engineer opens specs/PRD.md to review User Stories, Business Logic, and Success Criteria extracted from brainstorm.",
+                "flow_step_id": "FLOW-001:STEP-006",
+                "data_entities": ["ENT-002"],
+                "user_actions": ["open_file", "read", "validate_content"],
+                "system_actions": ["display_markdown"],
+                "emotional_state": "curious",
+                "pain_points": ["Large PRD difficult to scan quickly", "Missing requirements not obvious"],
+                "opportunities": ["PRD validation checklist", "Side-by-side comparison with original brainstorm", "Highlight Voice of Client vs Voice of Engineer"]
+              },
+              {
+                "id": "TP-007",
+                "name": "Implementation Plan Review",
+                "type": "editor",
+                "description": "Engineer reviews IMPLEMENTATION_PLAN.md to understand task breakdown and dependency ordering (DB -> Types -> Services -> API -> UI).",
+                "flow_step_id": "FLOW-001:STEP-010",
+                "data_entities": ["ENT-004", "ENT-005"],
+                "user_actions": ["open_file", "scan_tasks", "verify_ordering"],
+                "system_actions": ["display_checklist"],
+                "emotional_state": "confident",
+                "pain_points": ["Task atomicity difficult to verify", "Dependency logic not visualized"],
+                "opportunities": ["Visual dependency graph", "Estimated total duration", "Task complexity indicators"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-004",
+            "name": "Autonomous Loop Initiation",
+            "description": "Engineer starts the autonomous implementation loop and verifies dashboard is receiving telemetry.",
+            "duration_estimate": "2-5 minutes",
+            "touchpoints": [
+              {
+                "id": "TP-008",
+                "name": "Loop Command Execution",
+                "type": "cli",
+                "description": "Engineer executes /...loop to start orchestrate.sh in background, activating Shift Manager and beginning Worker cycling.",
+                "flow_step_id": "FLOW-015:STEP-003",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["type_command", "execute"],
+                "system_actions": ["start_orchestrator", "spawn_manager", "initialize_telemetry"],
+                "emotional_state": "confident",
+                "pain_points": ["No immediate confirmation of successful start"],
+                "opportunities": ["Show process IDs", "Confirm telemetry connection", "Display expected first task"]
+              },
+              {
+                "id": "TP-009",
+                "name": "Dashboard Launch",
+                "type": "web",
+                "description": "Engineer opens HTML Dashboard at localhost:3000 to verify real-time telemetry is being received.",
+                "flow_step_id": "FLOW-012:STEP-001",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["open_browser", "navigate_url", "verify_connection"],
+                "system_actions": ["establish_websocket", "display_initial_state"],
+                "emotional_state": "curious",
+                "pain_points": ["Dashboard may not auto-open", "WebSocket connection status unclear"],
+                "opportunities": ["Auto-launch dashboard on loop start", "Connection status indicator", "First-run tutorial overlay"]
+              },
+              {
+                "id": "TP-010",
+                "name": "First Task Observation",
+                "type": "web",
+                "description": "Engineer observes Worker bar beginning to pulse as first atomic task is assigned and Ralph Wiggum Loop begins.",
+                "flow_step_id": "FLOW-006:STEP-002",
+                "data_entities": ["ENT-005", "ENT-009"],
+                "user_actions": ["observe"],
+                "system_actions": ["update_progress_bars", "display_task_name"],
+                "emotional_state": "satisfied",
+                "pain_points": [],
+                "opportunities": ["Show estimated task completion time", "Display task details on hover"]
+              }
+            ]
+          }
+        ],
+        "success_metrics": [
+          {
+            "metric": "setup_completion_time",
+            "target": "<15 minutes",
+            "measurement": "Time from project init to first task execution"
+          },
+          {
+            "metric": "prd_acceptance_rate",
+            "target": ">90%",
+            "measurement": "PRDs accepted without manual editing"
+          },
+          {
+            "metric": "first_run_success",
+            "target": ">95%",
+            "measurement": "Loop starts successfully on first attempt"
+          }
+        ]
+      },
+      {
+        "id": "JRN-002",
+        "name": "Daily Autonomous Run Journey",
+        "description": "Engineer starts the autonomous loop, monitors progress through the dashboard, observes task completions, and handles any alerts during normal operation.",
+        "persona_id": "PERSONA-001",
+        "flow_ids": ["FLOW-002", "FLOW-003", "FLOW-006", "FLOW-012", "FLOW-013"],
+        "story_ids": ["ST-005", "ST-006", "ST-009", "ST-010", "ST-022", "ST-023", "ST-024", "ST-025", "ST-026", "ST-027"],
+        "phases": [
+          {
+            "id": "PHASE-005",
+            "name": "Morning Loop Start",
+            "description": "Engineer initiates daily autonomous run and establishes monitoring posture.",
+            "duration_estimate": "2-5 minutes",
+            "touchpoints": [
+              {
+                "id": "TP-011",
+                "name": "Resume or Fresh Start Decision",
+                "type": "cli",
+                "description": "Engineer checks for existing SHIFT_HANDOFF.md to determine if resuming previous session or starting fresh.",
+                "flow_step_id": "FLOW-005:STEP-009",
+                "data_entities": ["ENT-008", "ENT-004"],
+                "user_actions": ["check_status", "decide_action"],
+                "system_actions": ["detect_handoff", "display_progress"],
+                "emotional_state": "curious",
+                "pain_points": ["Previous state unclear after overnight break"],
+                "opportunities": ["Morning status summary command", "Resume vs restart prompt"]
+              },
+              {
+                "id": "TP-012",
+                "name": "Loop Activation",
+                "type": "cli",
+                "description": "Engineer executes /...loop to resume or start autonomous implementation.",
+                "flow_step_id": "FLOW-015:STEP-003",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["execute_command"],
+                "system_actions": ["spawn_manager", "load_handoff"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": ["Show last completed task on resume"]
+              },
+              {
+                "id": "TP-013",
+                "name": "Dashboard Establishment",
+                "type": "web",
+                "description": "Engineer opens dashboard to secondary monitor for passive monitoring throughout the day.",
+                "flow_step_id": "FLOW-012:STEP-001",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["open_dashboard", "position_window"],
+                "system_actions": ["connect_websocket", "sync_state"],
+                "emotional_state": "confident",
+                "pain_points": ["Need to manually reopen after system restart"],
+                "opportunities": ["Dashboard persistence across restarts", "Mobile-responsive view for phone monitoring"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-006",
+            "name": "Passive Monitoring",
+            "description": "Engineer works on other tasks while dashboard provides ambient awareness of pipeline progress.",
+            "duration_estimate": "Hours (background)",
+            "touchpoints": [
+              {
+                "id": "TP-014",
+                "name": "Context Window Progress Bars",
+                "type": "web",
+                "description": "Engineer peripherally monitors Manager (steady growth) and Worker (pulsing heartbeat) context bars. Color states indicate health: Blue (<40% Smart Zone), Orange (40-60% Degrading), Red (>60% Dumb Zone).",
+                "flow_step_id": "FLOW-012:STEP-002",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["glance", "interpret_colors"],
+                "system_actions": ["animate_bars", "update_colors"],
+                "emotional_state": "confident",
+                "pain_points": ["Subtle color changes may be missed in peripheral vision"],
+                "opportunities": ["Audio cue for zone transitions", "Browser tab color change", "Native notifications for warnings"]
+              },
+              {
+                "id": "TP-015",
+                "name": "Roadmap Progress Visualization",
+                "type": "web",
+                "description": "Engineer observes overall project completion (completed/total tasks) and current active task title.",
+                "flow_step_id": "FLOW-012:STEP-003",
+                "data_entities": ["ENT-004", "ENT-005"],
+                "user_actions": ["check_progress"],
+                "system_actions": ["calculate_percentage", "display_task_name"],
+                "emotional_state": "satisfied",
+                "pain_points": ["No time-based progress estimation"],
+                "opportunities": ["Velocity-based ETA", "Task completion rate graph", "Daily progress summary"]
+              },
+              {
+                "id": "TP-016",
+                "name": "Cost Tracking Display",
+                "type": "web",
+                "description": "Engineer monitors accumulated cost at $10.42/hour rate with tasks-per-hour velocity indicator.",
+                "flow_step_id": "FLOW-012:STEP-004",
+                "data_entities": ["ENT-001"],
+                "user_actions": ["check_cost"],
+                "system_actions": ["calculate_cost", "display_velocity"],
+                "emotional_state": "confident",
+                "pain_points": ["No budget alerting", "Cost-per-task unclear"],
+                "opportunities": ["Budget threshold alerts", "Cost efficiency graphs", "ROI calculator"]
+              },
+              {
+                "id": "TP-017",
+                "name": "Guardrail Status Panel",
+                "type": "web",
+                "description": "Engineer observes back pressure indicators: TypeScript (tsc) status, Multi-tenancy audit, test coverage percentage. Red/green indicators for pass/fail.",
+                "flow_step_id": "FLOW-012:STEP-005",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["monitor_health"],
+                "system_actions": ["update_indicators", "flash_on_failure"],
+                "emotional_state": "confident",
+                "pain_points": ["Failures may not be immediately obvious"],
+                "opportunities": ["Failure sound alerts", "Guardrail history graph", "Drill-down to specific failures"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-007",
+            "name": "Task Completion Observation",
+            "description": "Engineer notices task completions and Worker bar resets as atomic tasks are completed and committed.",
+            "duration_estimate": "15-30 minutes per task",
+            "touchpoints": [
+              {
+                "id": "TP-018",
+                "name": "Worker Bar Reset",
+                "type": "web",
+                "description": "Engineer observes Worker progress bar reset to 0% as Worker self-destructs after successful task completion.",
+                "flow_step_id": "FLOW-007:STEP-006",
+                "data_entities": ["ENT-009", "ENT-011"],
+                "user_actions": ["observe_reset"],
+                "system_actions": ["animate_reset", "update_telemetry"],
+                "emotional_state": "satisfied",
+                "pain_points": ["Reset may be missed if not watching"],
+                "opportunities": ["Completion notification", "Success animation", "Task completion log"]
+              },
+              {
+                "id": "TP-019",
+                "name": "Progress Increment",
+                "type": "web",
+                "description": "Engineer sees roadmap progress percentage increase as completed task is checked off in IMPLEMENTATION_PLAN.md.",
+                "flow_step_id": "FLOW-003:STEP-008",
+                "data_entities": ["ENT-004", "ENT-005"],
+                "user_actions": ["observe_increment"],
+                "system_actions": ["update_progress", "display_commit_hash"],
+                "emotional_state": "satisfied",
+                "pain_points": [],
+                "opportunities": ["Celebration animation at milestones (25%, 50%, 75%, 100%)", "Show commit message"]
+              },
+              {
+                "id": "TP-020",
+                "name": "New Task Assignment",
+                "type": "web",
+                "description": "Engineer sees current task title update as Manager assigns next atomic task to fresh Worker.",
+                "flow_step_id": "FLOW-003:STEP-004",
+                "data_entities": ["ENT-005", "ENT-009"],
+                "user_actions": ["observe_transition"],
+                "system_actions": ["update_task_display", "reset_worker_bar"],
+                "emotional_state": "confident",
+                "pain_points": ["Task transition may be too fast to notice"],
+                "opportunities": ["Task transition animation", "Task queue preview"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-008",
+            "name": "Shift Rotation Observation",
+            "description": "Engineer observes Manager rotation at 60% context threshold and seamless handoff to successor.",
+            "duration_estimate": "2-5 minutes",
+            "touchpoints": [
+              {
+                "id": "TP-021",
+                "name": "Manager Bar Warning",
+                "type": "web",
+                "description": "Engineer notices Manager context bar transitioning from Blue to Orange as it approaches 60% threshold.",
+                "flow_step_id": "FLOW-002:STEP-002",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["observe_warning"],
+                "system_actions": ["transition_color", "prepare_rotation"],
+                "emotional_state": "curious",
+                "pain_points": ["Orange zone may feel like impending failure"],
+                "opportunities": ["Reassuring tooltip explaining planned rotation", "Countdown to rotation"]
+              },
+              {
+                "id": "TP-022",
+                "name": "Manager Reset",
+                "type": "web",
+                "description": "Engineer observes Manager bar reset to ~5-10% as new Manager instance spawns and loads SHIFT_HANDOFF.md.",
+                "flow_step_id": "FLOW-005:STEP-010",
+                "data_entities": ["ENT-008", "ENT-009"],
+                "user_actions": ["observe_reset"],
+                "system_actions": ["reset_bar", "show_handoff_notification"],
+                "emotional_state": "satisfied",
+                "pain_points": ["Rotation success not explicitly confirmed"],
+                "opportunities": ["Shift rotation notification", "Shift count display", "Handoff animation"]
+              }
+            ]
+          }
+        ],
+        "success_metrics": [
+          {
+            "metric": "uninterrupted_run_time",
+            "target": ">4 hours",
+            "measurement": "Average time between human interventions"
+          },
+          {
+            "metric": "tasks_per_hour",
+            "target": ">2 tasks/hour",
+            "measurement": "Average task completion velocity"
+          },
+          {
+            "metric": "monitoring_overhead",
+            "target": "<10% of workday",
+            "measurement": "Time spent actively watching dashboard"
+          }
+        ]
+      },
+      {
+        "id": "JRN-003",
+        "name": "Crisis Intervention Journey",
+        "description": "Engineer detects problem behavior (hallucination spiral, stuck loop), activates Crisis Mode to stop all processes, and runs recovery analysis to prevent repeat failures.",
+        "persona_id": "PERSONA-001",
+        "flow_ids": ["FLOW-014", "FLOW-017"],
+        "story_ids": ["ST-029", "ST-030", "ST-031", "ST-032", "ST-040", "ST-041"],
+        "phases": [
+          {
+            "id": "PHASE-009",
+            "name": "Anomaly Detection",
+            "description": "Engineer notices concerning behavior through dashboard indicators or cost accumulation without progress.",
+            "duration_estimate": "1-5 minutes",
+            "touchpoints": [
+              {
+                "id": "TP-023",
+                "name": "Red Zone Alert",
+                "type": "web",
+                "description": "Engineer observes Worker or Manager bar stuck in Red (>60% context) zone, indicating Dumb Zone entry.",
+                "flow_step_id": "FLOW-002:STEP-002",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["notice_alert", "assess_severity"],
+                "system_actions": ["display_red_bar", "pulse_warning"],
+                "emotional_state": "anxious",
+                "pain_points": ["Difficult to distinguish normal red from stuck red", "No explicit hallucination detection"],
+                "opportunities": ["Stall detection algorithm", "Time-in-zone indicator", "Automatic hallucination pattern detection"]
+              },
+              {
+                "id": "TP-024",
+                "name": "Progress Stall Recognition",
+                "type": "web",
+                "description": "Engineer notices no task completion for extended period while cost continues to accumulate.",
+                "flow_step_id": "FLOW-012:STEP-004",
+                "data_entities": ["ENT-004", "ENT-001"],
+                "user_actions": ["compare_progress_to_cost", "recognize_stall"],
+                "system_actions": ["display_velocity", "show_accumulated_cost"],
+                "emotional_state": "frustrated",
+                "pain_points": ["No explicit stall alert", "Must manually correlate time and progress"],
+                "opportunities": ["Automatic stall detection with notification", "Cost-without-progress alert", "Task timeout warning"]
+              },
+              {
+                "id": "TP-025",
+                "name": "Guardrail Failure Chain",
+                "type": "web",
+                "description": "Engineer observes repeated guardrail failures (compiler/tests) indicating Worker is in error spiral.",
+                "flow_step_id": "FLOW-008:STEP-007",
+                "data_entities": ["ENT-010", "ENT-009"],
+                "user_actions": ["monitor_failures", "count_retries"],
+                "system_actions": ["display_failure_count", "flash_red"],
+                "emotional_state": "anxious",
+                "pain_points": ["Retry count not prominently displayed", "No escalation before max retries"],
+                "opportunities": ["Retry countdown display", "Progressive warning alerts", "Early escalation option"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-010",
+            "name": "Crisis Activation",
+            "description": "Engineer activates Crisis Mode to immediately terminate all AI processes and stop token burn.",
+            "duration_estimate": "<30 seconds",
+            "touchpoints": [
+              {
+                "id": "TP-026",
+                "name": "Crisis Button Click",
+                "type": "web",
+                "description": "Engineer clicks prominent red Crisis Mode button with neon-liquid warning glow. No confirmation required for immediate action.",
+                "flow_step_id": "FLOW-014:STEP-001",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["click_crisis_button"],
+                "system_actions": ["receive_click", "provide_feedback"],
+                "emotional_state": "anxious",
+                "pain_points": ["Button may be hard to find in crisis state", "No confirmation may cause accidental clicks"],
+                "opportunities": ["Keyboard shortcut (Ctrl+Shift+X)", "Prominent button positioning", "Post-activation confirmation dialog for accidental clicks"]
+              },
+              {
+                "id": "TP-027",
+                "name": "Visual Feedback",
+                "type": "web",
+                "description": "Dashboard provides immediate visual feedback confirming Crisis Mode activation before any processes are killed.",
+                "flow_step_id": "FLOW-014:STEP-002",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["observe_confirmation"],
+                "system_actions": ["display_activation", "change_ui_state"],
+                "emotional_state": "anxious",
+                "pain_points": ["Unclear if action registered"],
+                "opportunities": ["Full-screen overlay during crisis", "Audio confirmation", "Step-by-step progress display"]
+              },
+              {
+                "id": "TP-028",
+                "name": "Process Termination",
+                "type": "system",
+                "description": "System executes pkill -f orchestrate.sh and pkill -f claude-code within 2 seconds of button click.",
+                "flow_step_id": "FLOW-014:STEP-005",
+                "data_entities": [],
+                "user_actions": ["wait_for_completion"],
+                "system_actions": ["kill_processes", "log_termination"],
+                "emotional_state": "anxious",
+                "pain_points": ["Termination may take longer than expected", "Zombie processes possible"],
+                "opportunities": ["Process kill confirmation for each", "Remaining process count display"]
+              },
+              {
+                "id": "TP-029",
+                "name": "Git Hard Reset",
+                "type": "system",
+                "description": "System executes git reset --hard HEAD to revert uncommitted changes while preserving git history for forensics.",
+                "flow_step_id": "FLOW-014:STEP-007",
+                "data_entities": [],
+                "user_actions": ["observe_reset"],
+                "system_actions": ["execute_reset", "clear_changes"],
+                "emotional_state": "relieved",
+                "pain_points": ["May lose valid uncommitted work"],
+                "opportunities": ["Stash changes before reset option", "Show what was reverted"]
+              },
+              {
+                "id": "TP-030",
+                "name": "Telemetry Reset",
+                "type": "web",
+                "description": "Dashboard bars return to zero as telemetry.json is cleared, confirming system is ready for restart.",
+                "flow_step_id": "FLOW-014:STEP-011",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["observe_reset"],
+                "system_actions": ["reset_bars", "broadcast_message"],
+                "emotional_state": "relieved",
+                "pain_points": [],
+                "opportunities": ["Restart countdown timer", "Pre-restart checklist"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-011",
+            "name": "Recovery Analysis",
+            "description": "System performs forensic analysis to identify root cause and prevent repeat failures.",
+            "duration_estimate": "5-10 minutes",
+            "touchpoints": [
+              {
+                "id": "TP-031",
+                "name": "Forensic Log Analysis",
+                "type": "system",
+                "description": "Recovery agent analyzes activity.log and LAST_COMPILER_ERROR.log to identify trigger: vague spec, rule violation, or test gap.",
+                "flow_step_id": "FLOW-017:STEP-001",
+                "data_entities": ["ENT-010"],
+                "user_actions": ["initiate_analysis", "wait"],
+                "system_actions": ["parse_logs", "identify_trigger"],
+                "emotional_state": "curious",
+                "pain_points": ["Analysis may be opaque to user"],
+                "opportunities": ["Show analysis progress", "Present findings clearly", "Link to specific failure point"]
+              },
+              {
+                "id": "TP-032",
+                "name": "Root Cause Report",
+                "type": "cli",
+                "description": "System presents analysis findings: context fill at failure, specific file causing token spike, failure pattern identified.",
+                "flow_step_id": "FLOW-017:STEP-003",
+                "data_entities": ["ENT-010", "ENT-009"],
+                "user_actions": ["read_report", "understand_cause"],
+                "system_actions": ["format_report", "highlight_root_cause"],
+                "emotional_state": "satisfied",
+                "pain_points": ["Technical report may be hard to interpret"],
+                "opportunities": ["Plain language summary", "Recommended actions", "Similar past incidents"]
+              },
+              {
+                "id": "TP-033",
+                "name": "Specification Refinement",
+                "type": "editor",
+                "description": "Recovery agent proposes spec updates: clarify ambiguous logic, split complex tasks, add new tests for early detection.",
+                "flow_step_id": "FLOW-017:STEP-005",
+                "data_entities": ["ENT-003", "ENT-005", "ENT-006"],
+                "user_actions": ["review_changes", "approve_or_modify"],
+                "system_actions": ["generate_diff", "update_adr"],
+                "emotional_state": "confident",
+                "pain_points": ["Changes may require human judgment"],
+                "opportunities": ["One-click approval for suggested changes", "Before/after comparison"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-012",
+            "name": "Safe Restart",
+            "description": "Engineer restarts the loop with improved specifications to resume progress.",
+            "duration_estimate": "2-5 minutes",
+            "touchpoints": [
+              {
+                "id": "TP-034",
+                "name": "Pre-Restart Verification",
+                "type": "cli",
+                "description": "Engineer uses /...status to verify system state is clean and ready for restart.",
+                "flow_step_id": "FLOW-015:STEP-004",
+                "data_entities": ["ENT-004", "ENT-009"],
+                "user_actions": ["check_status"],
+                "system_actions": ["display_state", "verify_clean"],
+                "emotional_state": "confident",
+                "pain_points": ["Unknown if all issues resolved"],
+                "opportunities": ["Restart readiness checklist", "Green light indicator"]
+              },
+              {
+                "id": "TP-035",
+                "name": "Loop Restart",
+                "type": "cli",
+                "description": "Engineer executes /...loop to restart autonomous operation with refined specifications.",
+                "flow_step_id": "FLOW-015:STEP-003",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["execute_command"],
+                "system_actions": ["spawn_manager", "resume_from_last_good"],
+                "emotional_state": "confident",
+                "pain_points": ["Uncertainty if same failure will recur"],
+                "opportunities": ["Show what changed since last run", "Enhanced monitoring for previously failed task"]
+              }
+            ]
+          }
+        ],
+        "success_metrics": [
+          {
+            "metric": "crisis_response_time",
+            "target": "<2 seconds",
+            "measurement": "Time from button click to process termination"
+          },
+          {
+            "metric": "recovery_time",
+            "target": "<15 minutes",
+            "measurement": "Time from crisis to successful restart"
+          },
+          {
+            "metric": "repeat_failure_rate",
+            "target": "<5%",
+            "measurement": "Same failure recurring after recovery"
+          }
+        ]
+      },
+      {
+        "id": "JRN-004",
+        "name": "Shift Rotation Journey",
+        "description": "Manager reaches 60% context threshold, writes handoff documentation, terminates, and new Manager resumes from exact position.",
+        "persona_id": "PERSONA-001",
+        "flow_ids": ["FLOW-002", "FLOW-005", "FLOW-009"],
+        "story_ids": ["ST-005", "ST-008", "ST-016"],
+        "phases": [
+          {
+            "id": "PHASE-013",
+            "name": "Threshold Approach",
+            "description": "Current Manager monitors context usage and prepares for impending rotation.",
+            "duration_estimate": "Automatic (background)",
+            "touchpoints": [
+              {
+                "id": "TP-036",
+                "name": "Context Calculation",
+                "type": "system",
+                "description": "Manager calculates context_fill_percent as (total_tokens / 200000) * 100 after each Worker supervision cycle.",
+                "flow_step_id": "FLOW-002:STEP-001",
+                "data_entities": ["ENT-009"],
+                "user_actions": [],
+                "system_actions": ["calculate_fill", "update_telemetry"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-037",
+                "name": "Zone Transition to Orange",
+                "type": "web",
+                "description": "Dashboard transitions Manager bar from Blue to Orange as context approaches 40-60% degrading zone.",
+                "flow_step_id": "FLOW-002:STEP-002",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["observe_optional"],
+                "system_actions": ["transition_color"],
+                "emotional_state": "curious",
+                "pain_points": ["Orange may seem alarming"],
+                "opportunities": ["Tooltip: 'Planned rotation approaching'"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-014",
+            "name": "Handoff Preparation",
+            "description": "Manager compiles comprehensive handoff documentation for successor.",
+            "duration_estimate": "1-2 minutes",
+            "touchpoints": [
+              {
+                "id": "TP-038",
+                "name": "Accomplishments Compilation",
+                "type": "system",
+                "description": "Manager compiles list of tasks completed during this shift with commit hashes.",
+                "flow_step_id": "FLOW-005:STEP-001",
+                "data_entities": ["ENT-005", "ENT-007"],
+                "user_actions": [],
+                "system_actions": ["gather_accomplishments"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-039",
+                "name": "Architecture Delta Documentation",
+                "type": "system",
+                "description": "Manager documents architectural changes made during shift based on recent ADR entries.",
+                "flow_step_id": "FLOW-005:STEP-002",
+                "data_entities": ["ENT-006", "ENT-008"],
+                "user_actions": [],
+                "system_actions": ["extract_deltas", "format_summary"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-040",
+                "name": "Blocker Identification",
+                "type": "system",
+                "description": "Manager identifies any current blockers or persistent friction points for successor awareness.",
+                "flow_step_id": "FLOW-005:STEP-003",
+                "data_entities": ["ENT-008"],
+                "user_actions": [],
+                "system_actions": ["identify_blockers", "document_friction"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-041",
+                "name": "SHIFT_HANDOFF.md Write",
+                "type": "system",
+                "description": "Manager writes complete SHIFT_HANDOFF.md with Accomplishments, Architecture Delta, Blockers, and last 5 ADR summaries.",
+                "flow_step_id": "FLOW-005:STEP-006",
+                "data_entities": ["ENT-008"],
+                "user_actions": [],
+                "system_actions": ["write_file", "verify_completeness"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": ["Handoff quality score"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-015",
+            "name": "Manager Transition",
+            "description": "Current Manager terminates and new Manager spawns to continue from exact position.",
+            "duration_estimate": "30 seconds - 1 minute",
+            "touchpoints": [
+              {
+                "id": "TP-042",
+                "name": "Exit Code 10 Signal",
+                "type": "system",
+                "description": "Outgoing Manager exits with code 10 to signal rotation to Orchestrator (not completion, not error).",
+                "flow_step_id": "FLOW-005:STEP-007",
+                "data_entities": [],
+                "user_actions": [],
+                "system_actions": ["exit_process", "signal_orchestrator"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-043",
+                "name": "Orchestrator Spawn",
+                "type": "system",
+                "description": "Orchestrator detects exit code 10, spawns fresh Manager instance with HANDOFF_FILE reference.",
+                "flow_step_id": "FLOW-009:STEP-006",
+                "data_entities": ["ENT-008"],
+                "user_actions": [],
+                "system_actions": ["spawn_process", "inject_handoff"],
+                "emotional_state": "confident",
+                "pain_points": ["Spawn may fail"],
+                "opportunities": ["Retry with delay on spawn failure"]
+              },
+              {
+                "id": "TP-044",
+                "name": "Dashboard Manager Reset",
+                "type": "web",
+                "description": "Engineer observes Manager bar reset to ~5-10% as new Manager loads handoff context.",
+                "flow_step_id": "FLOW-005:STEP-009",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["observe_optional"],
+                "system_actions": ["reset_bar", "display_shift_number"],
+                "emotional_state": "satisfied",
+                "pain_points": ["Reset may be missed"],
+                "opportunities": ["Shift rotation notification", "Shift counter increment animation"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-016",
+            "name": "Seamless Resume",
+            "description": "New Manager reads handoff and continues from exact roadmap position with full context.",
+            "duration_estimate": "30 seconds",
+            "touchpoints": [
+              {
+                "id": "TP-045",
+                "name": "Handoff Context Acquisition",
+                "type": "system",
+                "description": "New Manager reads SHIFT_HANDOFF.md to acquire strategic context from predecessor.",
+                "flow_step_id": "FLOW-005:STEP-009",
+                "data_entities": ["ENT-008"],
+                "user_actions": [],
+                "system_actions": ["read_handoff", "parse_context"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-046",
+                "name": "Roadmap Position Verification",
+                "type": "system",
+                "description": "New Manager verifies IMPLEMENTATION_PLAN.md and identifies next unchecked task to resume exactly where predecessor stopped.",
+                "flow_step_id": "FLOW-005:STEP-010",
+                "data_entities": ["ENT-004", "ENT-005"],
+                "user_actions": [],
+                "system_actions": ["read_plan", "find_next_task"],
+                "emotional_state": "confident",
+                "pain_points": ["Plan may be out of sync"],
+                "opportunities": ["Sync verification before resume"]
+              },
+              {
+                "id": "TP-047",
+                "name": "Worker Assignment Resume",
+                "type": "system",
+                "description": "New Manager assigns next atomic task to fresh Worker, continuing autonomous loop without interruption.",
+                "flow_step_id": "FLOW-003:STEP-001",
+                "data_entities": ["ENT-005"],
+                "user_actions": [],
+                "system_actions": ["select_task", "prepare_assignment"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              }
+            ]
+          }
+        ],
+        "success_metrics": [
+          {
+            "metric": "handoff_completeness",
+            "target": "100%",
+            "measurement": "All required fields present in SHIFT_HANDOFF.md"
+          },
+          {
+            "metric": "context_loss",
+            "target": "0%",
+            "measurement": "Tasks dropped or duplicated during rotation"
+          },
+          {
+            "metric": "rotation_duration",
+            "target": "<60 seconds",
+            "measurement": "Time from exit code 10 to new Manager operational"
+          }
+        ]
+      },
+      {
+        "id": "JRN-005",
+        "name": "Task Completion Journey",
+        "description": "Worker boots fresh, receives atomic task, executes Ralph Wiggum Loop until success, writes status fragment, and self-destructs.",
+        "persona_id": "PERSONA-001",
+        "flow_ids": ["FLOW-006", "FLOW-007", "FLOW-008"],
+        "story_ids": ["ST-009", "ST-010", "ST-011", "ST-012", "ST-013", "ST-014"],
+        "phases": [
+          {
+            "id": "PHASE-017",
+            "name": "Fresh Boot",
+            "description": "Worker starts with 0-token clean context, immune to cognitive debt from previous sessions.",
+            "duration_estimate": "10-30 seconds",
+            "touchpoints": [
+              {
+                "id": "TP-048",
+                "name": "Process Spawn",
+                "type": "system",
+                "description": "Orchestrator spawns fresh Claude Code instance with empty context window for new Worker.",
+                "flow_step_id": "FLOW-006:STEP-001",
+                "data_entities": [],
+                "user_actions": [],
+                "system_actions": ["spawn_process", "verify_clean_context"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-049",
+                "name": "Minimal Context Injection",
+                "type": "system",
+                "description": "Worker receives only PRD.md reference and current_task.md from Manager, keeping initial context at ~5-10%.",
+                "flow_step_id": "FLOW-006:STEP-002",
+                "data_entities": ["ENT-002", "ENT-005"],
+                "user_actions": [],
+                "system_actions": ["inject_context", "verify_size"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-050",
+                "name": "Dashboard Worker Bar Activation",
+                "type": "web",
+                "description": "Engineer sees Worker progress bar begin pulsing from 0% as Worker starts processing task.",
+                "flow_step_id": "FLOW-012:STEP-002",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["observe_optional"],
+                "system_actions": ["display_pulse", "show_task_name"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": ["Show task details on hover"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-018",
+            "name": "Ralph Wiggum Loop Execution",
+            "description": "Worker iterates through Edit -> Build -> Test -> Fix cycle until all tests pass or max retries reached.",
+            "duration_estimate": "15-30 minutes",
+            "touchpoints": [
+              {
+                "id": "TP-051",
+                "name": "Previous Error Check",
+                "type": "system",
+                "description": "Worker checks for LAST_COMPILER_ERROR.log from previous failed attempts to understand what to fix.",
+                "flow_step_id": "FLOW-006:STEP-004",
+                "data_entities": ["ENT-010"],
+                "user_actions": [],
+                "system_actions": ["read_error_log", "inform_worker"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-052",
+                "name": "Code Edit Execution",
+                "type": "system",
+                "description": "Worker executes atomic code edits based on task specification: max 5 files, max 150 lines of code.",
+                "flow_step_id": "FLOW-006:STEP-005",
+                "data_entities": ["ENT-005"],
+                "user_actions": [],
+                "system_actions": ["edit_files", "track_changes"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-053",
+                "name": "LLVM/Compiler Verification",
+                "type": "system",
+                "description": "Worker runs LLVM/compiler (e.g., tsc for TypeScript) after each edit to verify syntactic correctness.",
+                "flow_step_id": "FLOW-006:STEP-006",
+                "data_entities": ["ENT-010"],
+                "user_actions": [],
+                "system_actions": ["run_compiler", "capture_output"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": ["Dashboard compile status indicator"]
+              },
+              {
+                "id": "TP-054",
+                "name": "Compile Error Capture",
+                "type": "system",
+                "description": "If compilation fails, error output is captured to LAST_COMPILER_ERROR.log for this or fresh Worker to fix.",
+                "flow_step_id": "FLOW-006:STEP-007",
+                "data_entities": ["ENT-010"],
+                "user_actions": [],
+                "system_actions": ["write_error_log", "truncate_to_1000_tokens"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-055",
+                "name": "Unit Test Gate",
+                "type": "system",
+                "description": "After successful compilation, Worker runs unit tests to verify no regression introduced.",
+                "flow_step_id": "FLOW-006:STEP-010",
+                "data_entities": [],
+                "user_actions": [],
+                "system_actions": ["run_tests", "evaluate_result"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": ["Dashboard test status indicator"]
+              },
+              {
+                "id": "TP-056",
+                "name": "Retry Loop",
+                "type": "system",
+                "description": "If tests fail, Worker reads error output and returns to Edit step. Maximum 5 retry attempts before escalation.",
+                "flow_step_id": "FLOW-006:STEP-009",
+                "data_entities": [],
+                "user_actions": [],
+                "system_actions": ["increment_retry", "prepare_fix"],
+                "emotional_state": "confident",
+                "pain_points": ["Retry count not visible to user"],
+                "opportunities": ["Dashboard retry counter", "Progressive warning as retries increase"]
+              },
+              {
+                "id": "TP-057",
+                "name": "Dashboard Worker Bar Growth",
+                "type": "web",
+                "description": "Engineer observes Worker context bar slowly growing as Ralph Loop iterates through edit-build-test cycles.",
+                "flow_step_id": "FLOW-012:STEP-002",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["observe_optional"],
+                "system_actions": ["update_bar", "maintain_pulse"],
+                "emotional_state": "confident",
+                "pain_points": ["Difficult to distinguish progress from stall"],
+                "opportunities": ["Loop iteration indicator", "Time-since-last-action display"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-019",
+            "name": "Task Completion and Commit",
+            "description": "All tests pass, Worker commits changes with descriptive message.",
+            "duration_estimate": "1-2 minutes",
+            "touchpoints": [
+              {
+                "id": "TP-058",
+                "name": "Test Success Signal",
+                "type": "system",
+                "description": "All unit tests pass (exit code 0), Worker proceeds to commit phase.",
+                "flow_step_id": "FLOW-006:STEP-012",
+                "data_entities": [],
+                "user_actions": [],
+                "system_actions": ["verify_success", "clear_error_log"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-059",
+                "name": "Git Commit",
+                "type": "system",
+                "description": "Worker commits changes with descriptive message linking to task ID.",
+                "flow_step_id": "FLOW-006:STEP-013",
+                "data_entities": ["ENT-005"],
+                "user_actions": [],
+                "system_actions": ["stage_changes", "commit"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-060",
+                "name": "Dashboard Guardrail Green",
+                "type": "web",
+                "description": "Engineer observes guardrail indicators show green for compiler and tests.",
+                "flow_step_id": "FLOW-012:STEP-005",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["observe_optional"],
+                "system_actions": ["update_indicators"],
+                "emotional_state": "satisfied",
+                "pain_points": [],
+                "opportunities": ["Success celebration animation"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-020",
+            "name": "Status Fragment and Self-Destruct",
+            "description": "Worker documents decisions for Manager, then terminates completely with zero memory retention.",
+            "duration_estimate": "30 seconds",
+            "touchpoints": [
+              {
+                "id": "TP-061",
+                "name": "Status Fragment Generation",
+                "type": "system",
+                "description": "Worker writes compact status fragment (<500 tokens): what was fixed, what was changed, patterns used, specific file paths and line numbers.",
+                "flow_step_id": "FLOW-007:STEP-001",
+                "data_entities": ["ENT-011"],
+                "user_actions": [],
+                "system_actions": ["generate_fragment", "write_file"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-062",
+                "name": "Process Termination",
+                "type": "system",
+                "description": "Worker process killed immediately after successful commit. Memory cleared completely, no state persists.",
+                "flow_step_id": "FLOW-007:STEP-005",
+                "data_entities": [],
+                "user_actions": [],
+                "system_actions": ["exit_process", "garbage_collect"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-063",
+                "name": "Dashboard Worker Bar Reset",
+                "type": "web",
+                "description": "Engineer observes Worker progress bar reset to 0% as Worker self-destructs, indicating ready for next task.",
+                "flow_step_id": "FLOW-007:STEP-006",
+                "data_entities": ["ENT-009"],
+                "user_actions": ["observe_optional"],
+                "system_actions": ["reset_bar", "stop_pulse"],
+                "emotional_state": "satisfied",
+                "pain_points": [],
+                "opportunities": ["Task completion sound", "Checkmark animation"]
+              },
+              {
+                "id": "TP-064",
+                "name": "Roadmap Checkbox Update",
+                "type": "system",
+                "description": "Manager marks task as complete in IMPLEMENTATION_PLAN.md, changing [ ] to [x].",
+                "flow_step_id": "FLOW-003:STEP-008",
+                "data_entities": ["ENT-004", "ENT-005"],
+                "user_actions": [],
+                "system_actions": ["update_checkbox", "increment_progress"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              }
+            ]
+          }
+        ],
+        "success_metrics": [
+          {
+            "metric": "task_completion_rate",
+            "target": ">95%",
+            "measurement": "Tasks completed without max retry escalation"
+          },
+          {
+            "metric": "average_task_duration",
+            "target": "20-30 minutes",
+            "measurement": "Time from Worker spawn to task completion"
+          },
+          {
+            "metric": "context_efficiency",
+            "target": "<40%",
+            "measurement": "Worker context fill at task completion"
+          }
+        ]
+      },
+      {
+        "id": "JRN-006",
+        "name": "Project Delivery Journey",
+        "description": "All tasks complete, Final Sanity Check audits run, client documentation generated, and professional handoff delivered.",
+        "persona_id": "PERSONA-002",
+        "flow_ids": ["FLOW-018", "FLOW-016"],
+        "story_ids": ["ST-038", "ST-039", "ST-042", "ST-043"],
+        "phases": [
+          {
+            "id": "PHASE-021",
+            "name": "Completion Detection",
+            "description": "System detects 100% roadmap completion and initiates final quality checks.",
+            "duration_estimate": "1-2 minutes",
+            "touchpoints": [
+              {
+                "id": "TP-065",
+                "name": "100% Progress Milestone",
+                "type": "web",
+                "description": "Dashboard shows roadmap progress at 100%, all tasks checked as complete.",
+                "flow_step_id": "FLOW-018:STEP-001",
+                "data_entities": ["ENT-004"],
+                "user_actions": ["observe_completion"],
+                "system_actions": ["display_100_percent", "trigger_celebration"],
+                "emotional_state": "satisfied",
+                "pain_points": [],
+                "opportunities": ["Completion celebration animation", "Summary of total tasks, time, cost"]
+              },
+              {
+                "id": "TP-066",
+                "name": "Final Sanity Check Initiation",
+                "type": "system",
+                "description": "Final Manager initiates comprehensive audits before deployment clearance.",
+                "flow_step_id": "FLOW-018:STEP-002",
+                "data_entities": [],
+                "user_actions": [],
+                "system_actions": ["initiate_audits"],
+                "emotional_state": "curious",
+                "pain_points": [],
+                "opportunities": ["Show audit checklist in dashboard"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-022",
+            "name": "Final Sanity Check",
+            "description": "Comprehensive quality audits verify KreativReason standards compliance before deployment.",
+            "duration_estimate": "5-10 minutes",
+            "touchpoints": [
+              {
+                "id": "TP-067",
+                "name": "Multi-tenancy Audit",
+                "type": "system",
+                "description": "Global RipGrep verifies tenantId present in all Prisma queries for security compliance.",
+                "flow_step_id": "FLOW-018:STEP-003",
+                "data_entities": [],
+                "user_actions": [],
+                "system_actions": ["ripgrep_tenantId", "report_results"],
+                "emotional_state": "curious",
+                "pain_points": ["Audit failure blocks deployment"],
+                "opportunities": ["Show audit progress", "Preview failing queries"]
+              },
+              {
+                "id": "TP-068",
+                "name": "Zod Validation Audit",
+                "type": "system",
+                "description": "Verify Zod validation schemas present on all API endpoints for input safety.",
+                "flow_step_id": "FLOW-018:STEP-004",
+                "data_entities": [],
+                "user_actions": [],
+                "system_actions": ["verify_zod", "report_results"],
+                "emotional_state": "curious",
+                "pain_points": [],
+                "opportunities": ["Show endpoints checked"]
+              },
+              {
+                "id": "TP-069",
+                "name": "Export Audit",
+                "type": "system",
+                "description": "Verify only named exports used (no export default) per KreativReason standards.",
+                "flow_step_id": "FLOW-018:STEP-005",
+                "data_entities": [],
+                "user_actions": [],
+                "system_actions": ["check_exports", "report_results"],
+                "emotional_state": "curious",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-070",
+                "name": "N+1 Query Detection",
+                "type": "system",
+                "description": "Service layer analyzed for potential N+1 query patterns that could cause performance issues.",
+                "flow_step_id": "FLOW-018:STEP-006",
+                "data_entities": [],
+                "user_actions": [],
+                "system_actions": ["analyze_queries", "report_warnings"],
+                "emotional_state": "curious",
+                "pain_points": ["N+1 warnings may require human judgment"],
+                "opportunities": ["Clear warning vs blocking distinction"]
+              },
+              {
+                "id": "TP-071",
+                "name": "Audit Results Summary",
+                "type": "cli",
+                "description": "Project Lead reviews comprehensive audit results showing pass/fail for each KreativReason standard.",
+                "flow_step_id": "FLOW-018:STEP-006",
+                "data_entities": [],
+                "user_actions": ["review_results", "approve_or_block"],
+                "system_actions": ["format_summary", "highlight_issues"],
+                "emotional_state": "satisfied",
+                "pain_points": ["Failures require additional remediation tasks"],
+                "opportunities": ["One-click remediation task generation", "Link to specific failing code"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-023",
+            "name": "Documentation Synthesis",
+            "description": "System synthesizes all Shift Reports and ADRs into comprehensive client documentation.",
+            "duration_estimate": "5-10 minutes",
+            "touchpoints": [
+              {
+                "id": "TP-072",
+                "name": "Shift Report Compilation",
+                "type": "system",
+                "description": "All SHIFT_REPORT.md files compiled and synthesized into project history narrative.",
+                "flow_step_id": "FLOW-018:STEP-007",
+                "data_entities": ["ENT-007"],
+                "user_actions": [],
+                "system_actions": ["compile_reports", "extract_narrative"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-073",
+                "name": "ADR Decision Extraction",
+                "type": "system",
+                "description": "Key architectural decisions extracted from ADR.md with rationale preserved.",
+                "flow_step_id": "FLOW-018:STEP-008",
+                "data_entities": ["ENT-006"],
+                "user_actions": [],
+                "system_actions": ["extract_decisions", "summarize_rationale"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-074",
+                "name": "Feature Coverage Confirmation",
+                "type": "system",
+                "description": "System confirms 100% feature coverage against original PRD.md requirements.",
+                "flow_step_id": "FLOW-018:STEP-009",
+                "data_entities": ["ENT-002"],
+                "user_actions": [],
+                "system_actions": ["compare_features", "confirm_coverage"],
+                "emotional_state": "satisfied",
+                "pain_points": ["Coverage gaps require return to implementation"],
+                "opportunities": ["Visual coverage matrix"]
+              }
+            ]
+          },
+          {
+            "id": "PHASE-024",
+            "name": "Client Handoff",
+            "description": "Professional README_CLIENT.md generated with deployment and maintenance instructions for client delivery.",
+            "duration_estimate": "2-5 minutes",
+            "touchpoints": [
+              {
+                "id": "TP-075",
+                "name": "Deployment Instructions Generation",
+                "type": "system",
+                "description": "System generates deployment instructions based on project configuration and dependencies.",
+                "flow_step_id": "FLOW-018:STEP-010",
+                "data_entities": [],
+                "user_actions": [],
+                "system_actions": ["generate_instructions"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-076",
+                "name": "Maintenance Guidelines Generation",
+                "type": "system",
+                "description": "Maintenance guidelines generated from ADR.md and architecture notes for long-term support.",
+                "flow_step_id": "FLOW-018:STEP-011",
+                "data_entities": ["ENT-006"],
+                "user_actions": [],
+                "system_actions": ["generate_guidelines"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-077",
+                "name": "README_CLIENT.md Write",
+                "type": "system",
+                "description": "Professional client-facing documentation written synthesizing all project artifacts.",
+                "flow_step_id": "FLOW-018:STEP-012",
+                "data_entities": [],
+                "user_actions": [],
+                "system_actions": ["write_readme", "format_professionally"],
+                "emotional_state": "confident",
+                "pain_points": [],
+                "opportunities": []
+              },
+              {
+                "id": "TP-078",
+                "name": "Project Lead Review",
+                "type": "editor",
+                "description": "Project Lead reviews README_CLIENT.md for completeness and professional quality before client delivery.",
+                "flow_step_id": "FLOW-018:STEP-012",
+                "data_entities": [],
+                "user_actions": ["review_document", "approve_or_edit"],
+                "system_actions": ["display_document"],
+                "emotional_state": "satisfied",
+                "pain_points": ["May require manual editing for client-specific messaging"],
+                "opportunities": ["Client-specific template options", "Brand voice customization"]
+              },
+              {
+                "id": "TP-079",
+                "name": "Pipeline Completion",
+                "type": "web",
+                "description": "Dashboard displays final project completion with total cost, time, and task statistics. Exit code 0 signals successful project delivery.",
+                "flow_step_id": "FLOW-018:STEP-013",
+                "data_entities": ["ENT-001"],
+                "user_actions": ["acknowledge_completion"],
+                "system_actions": ["display_final_stats", "exit_gracefully"],
+                "emotional_state": "satisfied",
+                "pain_points": [],
+                "opportunities": ["Project completion report export", "ROI calculation", "Client email template generation"]
+              }
+            ]
+          }
+        ],
+        "success_metrics": [
+          {
+            "metric": "audit_pass_rate",
+            "target": "100%",
+            "measurement": "All KreativReason standards audits pass"
+          },
+          {
+            "metric": "documentation_completeness",
+            "target": "100%",
+            "measurement": "All required sections present in README_CLIENT.md"
+          },
+          {
+            "metric": "delivery_time",
+            "target": "<30 minutes",
+            "measurement": "Time from 100% completion to client-ready handoff"
+          }
+        ]
+      }
+    ],
+    "optimization_opportunities": [
+      {
+        "id": "OPP-001",
+        "title": "Automated Project Scaffold",
+        "description": "Provide a project initialization command that creates directory structure, templates, and example brainstorm format to reduce setup friction.",
+        "impact": "medium",
+        "effort": "low",
+        "touchpoint_ids": ["TP-001", "TP-002"],
+        "expected_improvement": "Reduce First Project Setup time from 15 minutes to 5 minutes"
+      },
+      {
+        "id": "OPP-002",
+        "title": "Real-time Distiller Progress",
+        "description": "Add progress bar and step counter during Distiller processing to reduce anxiety during silent 30-60 second processing period.",
+        "impact": "high",
+        "effort": "low",
+        "touchpoint_ids": ["TP-004"],
+        "expected_improvement": "Eliminate user uncertainty during specification generation"
+      },
+      {
+        "id": "OPP-003",
+        "title": "Stall Detection and Alert",
+        "description": "Implement automatic detection of progress stalls (no task completion with ongoing cost) and push browser notifications.",
+        "impact": "high",
+        "effort": "medium",
+        "touchpoint_ids": ["TP-024", "TP-056"],
+        "expected_improvement": "Reduce time-to-crisis-intervention by 50%"
+      },
+      {
+        "id": "OPP-004",
+        "title": "Mobile Dashboard View",
+        "description": "Create responsive mobile view for dashboard to enable monitoring from phone during lunch or meetings.",
+        "impact": "medium",
+        "effort": "medium",
+        "touchpoint_ids": ["TP-013", "TP-014"],
+        "expected_improvement": "Enable truly hands-off monitoring for extended periods"
+      },
+      {
+        "id": "OPP-005",
+        "title": "Crisis Mode Keyboard Shortcut",
+        "description": "Add Ctrl+Shift+X global keyboard shortcut for Crisis Mode to enable faster response when problems are detected.",
+        "impact": "high",
+        "effort": "low",
+        "touchpoint_ids": ["TP-026"],
+        "expected_improvement": "Reduce crisis response time from 2-5 seconds to <1 second"
+      },
+      {
+        "id": "OPP-006",
+        "title": "Shift Rotation Notifications",
+        "description": "Add visual and optional audio notification when Manager rotation occurs to improve user awareness of system health.",
+        "impact": "medium",
+        "effort": "low",
+        "touchpoint_ids": ["TP-022", "TP-044"],
+        "expected_improvement": "Increase user confidence in autonomous operation"
+      },
+      {
+        "id": "OPP-007",
+        "title": "Ralph Loop Progress Indicator",
+        "description": "Show current loop iteration (1/5) and last action (edit/compile/test) on dashboard to distinguish progress from stall.",
+        "impact": "high",
+        "effort": "low",
+        "touchpoint_ids": ["TP-056", "TP-057"],
+        "expected_improvement": "Reduce false crisis activations by 40%"
+      },
+      {
+        "id": "OPP-008",
+        "title": "Plain Language Recovery Reports",
+        "description": "Transform technical forensic analysis into plain language summaries with recommended actions for non-expert interpretation.",
+        "impact": "medium",
+        "effort": "medium",
+        "touchpoint_ids": ["TP-032"],
+        "expected_improvement": "Reduce recovery time by enabling faster decision making"
+      },
+      {
+        "id": "OPP-009",
+        "title": "Milestone Celebrations",
+        "description": "Add celebration animations and optional sound effects at 25%, 50%, 75%, and 100% completion milestones.",
+        "impact": "low",
+        "effort": "low",
+        "touchpoint_ids": ["TP-019", "TP-065"],
+        "expected_improvement": "Improve user satisfaction and engagement with autonomous process"
+      },
+      {
+        "id": "OPP-010",
+        "title": "Auto-Launch Dashboard on Loop Start",
+        "description": "Automatically open dashboard in default browser when /...loop command is executed to reduce setup steps.",
+        "impact": "medium",
+        "effort": "low",
+        "touchpoint_ids": ["TP-008", "TP-009"],
+        "expected_improvement": "Reduce loop startup time by 30 seconds"
+      },
+      {
+        "id": "OPP-011",
+        "title": "Visual Dependency Graph",
+        "description": "Generate interactive visual dependency graph from IMPLEMENTATION_PLAN.md to improve task ordering comprehension.",
+        "impact": "medium",
+        "effort": "high",
+        "touchpoint_ids": ["TP-007"],
+        "expected_improvement": "Faster PRD review and approval"
+      },
+      {
+        "id": "OPP-012",
+        "title": "One-Click Remediation Tasks",
+        "description": "When Final Sanity Check audits fail, automatically generate remediation tasks for one-click addition to roadmap.",
+        "impact": "high",
+        "effort": "medium",
+        "touchpoint_ids": ["TP-067", "TP-068", "TP-069", "TP-071"],
+        "expected_improvement": "Reduce remediation setup time from 10 minutes to 30 seconds"
+      }
+    ]
+  }
+}

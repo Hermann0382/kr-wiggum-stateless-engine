@@ -1,0 +1,140 @@
+{
+  "id": "FLOW-005",
+  "name": "Shift Handoff Protocol",
+  "description": "Enables successor Shift Managers to read handoff documents and resume the roadmap without context loss.",
+  "feature_id": "FR-002",
+  "story_ids": ["ST-008"],
+  "actor": "system",
+  "trigger": "Current Shift Manager context exceeds 60% threshold OR new Manager instance starts",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Outgoing Manager compiles accomplishments from current shift",
+      "actor": "system",
+      "inputs": ["session_history", "completed_tasks"],
+      "outputs": ["accomplishments_list"],
+      "conditions": [],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Manager documents Architecture Delta (changes made this shift)",
+      "actor": "system",
+      "inputs": ["ADR.md_recent_entries", "code_changes"],
+      "outputs": ["architecture_delta"],
+      "conditions": [],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Manager identifies and documents current blockers",
+      "actor": "system",
+      "inputs": ["failed_tasks", "pending_issues"],
+      "outputs": ["blockers_list"],
+      "conditions": [],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Manager summarizes last 5 ADR entries for quick context",
+      "actor": "system",
+      "inputs": ["ADR.md"],
+      "outputs": ["adr_summary"],
+      "conditions": [],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Manager verifies IMPLEMENTATION_PLAN.md accuracy",
+      "actor": "system",
+      "inputs": ["IMPLEMENTATION_PLAN.md", "git_log"],
+      "outputs": ["plan_verification_result"],
+      "conditions": [],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Manager writes SHIFT_HANDOFF.md with complete context",
+      "actor": "system",
+      "inputs": ["accomplishments_list", "architecture_delta", "blockers_list", "adr_summary"],
+      "outputs": ["SHIFT_HANDOFF.md"],
+      "conditions": [],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Manager exits with code 10 signaling rotation",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["exit_code_10"],
+      "conditions": [],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Orchestrator spawns new Manager instance with HANDOFF_FILE",
+      "actor": "system",
+      "inputs": ["SHIFT_HANDOFF.md"],
+      "outputs": ["new_manager_instance"],
+      "conditions": [],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "New Manager reads SHIFT_HANDOFF.md to acquire context",
+      "actor": "system",
+      "inputs": ["SHIFT_HANDOFF.md"],
+      "outputs": ["inherited_context"],
+      "conditions": [],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "New Manager resumes from exact roadmap position",
+      "actor": "system",
+      "inputs": ["IMPLEMENTATION_PLAN.md", "inherited_context"],
+      "outputs": ["resumed_operation"],
+      "conditions": [],
+      "next_steps": []
+    }
+  ],
+  "success_criteria": [
+    "SHIFT_HANDOFF.md contains: Accomplishments, Architecture Delta, Blockers",
+    "Last 5 ADR entries summarized for quick context",
+    "IMPLEMENTATION_PLAN.md accuracy verified before handoff",
+    "New Manager resumes from exact roadmap position",
+    "Zero context loss between Manager rotations"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "SHIFT_HANDOFF.md write fails",
+      "recovery_action": "Retry write up to 3 times",
+      "escalation": "Output handoff to stdout for manual capture"
+    },
+    {
+      "error_condition": "New Manager fails to start",
+      "recovery_action": "Orchestrator retries spawn with delay",
+      "escalation": "Halt pipeline and alert user"
+    },
+    {
+      "error_condition": "IMPLEMENTATION_PLAN.md out of sync",
+      "recovery_action": "Reconcile plan with git history",
+      "escalation": "Mark discrepancies in handoff document"
+    },
+    {
+      "error_condition": "ADR.md has fewer than 5 entries",
+      "recovery_action": "Include all available entries",
+      "escalation": "Note limited history in handoff"
+    }
+  ]
+}

@@ -1,0 +1,208 @@
+{
+  "id": "SFLOW-006",
+  "name": "Crisis Mode System Flow",
+  "description": "Emergency override flow from button click through process termination, code revert, and telemetry reset.",
+  "components": ["dashboard_ui", "browser", "socket_io", "watcher", "process_manager", "git", "filesystem"],
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "User clicks Crisis Mode button",
+      "component": "dashboard_ui",
+      "inputs": ["click_event"],
+      "outputs": ["crisis_trigger"],
+      "data_flow": ["dom_event"],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Dashboard shows immediate visual feedback",
+      "component": "dashboard_ui",
+      "inputs": ["crisis_trigger"],
+      "outputs": ["visual_confirmation"],
+      "data_flow": ["css_animation"],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Browser emits 'crisis' event via WebSocket",
+      "component": "browser",
+      "inputs": ["crisis_trigger"],
+      "outputs": ["websocket_message"],
+      "data_flow": ["websocket_emit"],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Watcher receives 'crisis' event",
+      "component": "watcher",
+      "inputs": ["websocket_message"],
+      "outputs": ["crisis_signal"],
+      "data_flow": ["websocket_receive"],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Execute pkill -f orchestrate.sh",
+      "component": "process_manager",
+      "inputs": ["kill_command"],
+      "outputs": ["orchestrator_terminated"],
+      "data_flow": ["subprocess_exec"],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Execute pkill -f claude-code",
+      "component": "process_manager",
+      "inputs": ["kill_command"],
+      "outputs": ["ai_processes_terminated"],
+      "data_flow": ["subprocess_exec"],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Log termination events to crisis.log",
+      "component": "filesystem",
+      "inputs": ["termination_results"],
+      "outputs": ["crisis.log"],
+      "data_flow": ["filesystem_append"],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Execute git reset --hard HEAD",
+      "component": "git",
+      "inputs": ["reset_command"],
+      "outputs": ["code_reverted"],
+      "data_flow": ["subprocess_exec"],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Git history preserved for forensics",
+      "component": "git",
+      "inputs": [],
+      "outputs": ["history_intact"],
+      "data_flow": ["git_log"],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Reset telemetry.json to zero state",
+      "component": "filesystem",
+      "inputs": ["reset_template"],
+      "outputs": [".ralph/telemetry.json"],
+      "data_flow": ["filesystem_write"],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Watcher broadcasts 'crisis_complete' event",
+      "component": "socket_io",
+      "inputs": ["completion_status"],
+      "outputs": ["broadcast_event"],
+      "data_flow": ["websocket_emit"],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "All connected dashboards receive update",
+      "component": "browser",
+      "inputs": ["websocket_message"],
+      "outputs": ["crisis_acknowledged"],
+      "data_flow": ["websocket_receive"],
+      "next_steps": ["STEP-013"]
+    },
+    {
+      "id": "STEP-013",
+      "sequence": 13,
+      "action": "Dashboard resets all progress bars to zero",
+      "component": "dashboard_ui",
+      "inputs": ["crisis_acknowledged"],
+      "outputs": ["ui_reset"],
+      "data_flow": ["dom_update"],
+      "next_steps": ["STEP-014"]
+    },
+    {
+      "id": "STEP-014",
+      "sequence": 14,
+      "action": "System ready for loop restart",
+      "component": "watcher",
+      "inputs": [],
+      "outputs": ["ready_state"],
+      "data_flow": ["state_set"],
+      "next_steps": []
+    }
+  ],
+  "data_flow": [
+    {
+      "source": "dashboard_ui",
+      "target": "browser",
+      "data": "crisis trigger",
+      "protocol": "dom_event"
+    },
+    {
+      "source": "browser",
+      "target": "watcher",
+      "data": "crisis signal",
+      "protocol": "websocket"
+    },
+    {
+      "source": "watcher",
+      "target": "process_manager",
+      "data": "kill commands",
+      "protocol": "subprocess"
+    },
+    {
+      "source": "process_manager",
+      "target": "git",
+      "data": "reset trigger",
+      "protocol": "subprocess"
+    },
+    {
+      "source": "watcher",
+      "target": "filesystem",
+      "data": "telemetry reset",
+      "protocol": "filesystem_write"
+    },
+    {
+      "source": "watcher",
+      "target": "browser",
+      "data": "completion broadcast",
+      "protocol": "websocket"
+    }
+  ],
+  "error_handling": [
+    {
+      "component": "process_manager",
+      "error": "process_not_found",
+      "recovery": "log and continue (already dead)"
+    },
+    {
+      "component": "process_manager",
+      "error": "kill_permission_denied",
+      "recovery": "escalate to SIGKILL"
+    },
+    {
+      "component": "git",
+      "error": "reset_failed",
+      "recovery": "attempt git clean -fd"
+    },
+    {
+      "component": "socket_io",
+      "error": "broadcast_failed",
+      "recovery": "retry broadcast after 100ms"
+    }
+  ]
+}

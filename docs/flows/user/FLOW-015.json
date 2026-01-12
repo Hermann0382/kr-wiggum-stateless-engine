@@ -1,0 +1,161 @@
+{
+  "id": "FLOW-015",
+  "name": "Slash Command Execution",
+  "description": "Human-friendly CLI commands that abstract complex orchestration into simple intent-based actions.",
+  "feature_id": "FR-010",
+  "story_ids": ["ST-033", "ST-034", "ST-035", "ST-036", "ST-037"],
+  "actor": "user",
+  "trigger": "User types slash command in Claude Code CLI",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "User enters slash command in CLI",
+      "actor": "user",
+      "inputs": ["command_string"],
+      "outputs": ["parsed_command", "command_args"],
+      "conditions": [],
+      "next_steps": ["STEP-002", "STEP-004", "STEP-006", "STEP-008", "STEP-010"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "/...seed @file: Trigger Distiller with linked file",
+      "actor": "system",
+      "inputs": ["brainstorm_file"],
+      "outputs": ["distiller_process"],
+      "conditions": ["command = /...seed"],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Generate specs/PRD.md, specs/index.md, IMPLEMENTATION_PLAN.md",
+      "actor": "system",
+      "inputs": ["distiller_output"],
+      "outputs": ["generated_specs"],
+      "conditions": [],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "/...plan: Analyze gap between specs and current code",
+      "actor": "system",
+      "inputs": ["specs", "codebase"],
+      "outputs": ["gap_analysis"],
+      "conditions": ["command = /...plan"],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Update IMPLEMENTATION_PLAN.md with ordered tasks",
+      "actor": "system",
+      "inputs": ["gap_analysis"],
+      "outputs": ["updated_plan", "task_count"],
+      "conditions": [],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "/...loop: Start orchestrate.sh in background",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["orchestrator_process"],
+      "conditions": ["command = /...loop"],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Activate Shift Manager and begin Worker cycling",
+      "actor": "system",
+      "inputs": ["orchestrator_process"],
+      "outputs": ["active_loop", "telemetry_streaming"],
+      "conditions": [],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "/...status: Render DASHBOARD.md in terminal-friendly format",
+      "actor": "system",
+      "inputs": ["current_state"],
+      "outputs": ["terminal_dashboard"],
+      "conditions": ["command = /...status"],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Display context %, completed/total tasks, latest ADR",
+      "actor": "system",
+      "inputs": ["telemetry", "roadmap", "ADR.md"],
+      "outputs": ["status_display"],
+      "conditions": [],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "/...digest: Handle unstructured brain dump input",
+      "actor": "system",
+      "inputs": ["messy_paste"],
+      "outputs": ["parsed_concepts"],
+      "conditions": ["command = /...digest"],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Identify core logic and propose 5-10 atomic tasks",
+      "actor": "system",
+      "inputs": ["parsed_concepts"],
+      "outputs": ["specs/concepts.md", "proposed_tasks"],
+      "conditions": [],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "Output success/failure status to user",
+      "actor": "system",
+      "inputs": ["command_result"],
+      "outputs": ["status_message"],
+      "conditions": [],
+      "next_steps": []
+    }
+  ],
+  "success_criteria": [
+    "/...seed generates specs/PRD.md, specs/index.md, IMPLEMENTATION_PLAN.md",
+    "/...plan updates IMPLEMENTATION_PLAN.md with task count reported",
+    "/...loop starts orchestrate.sh and activates telemetry",
+    "/...status shows context %, tasks completed/total, latest ADR",
+    "/...digest creates specs/concepts.md with 5-10 atomic tasks",
+    "All commands output clear success/failure status"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "Unknown command",
+      "recovery_action": "Display available commands list",
+      "escalation": "Suggest similar command if typo detected"
+    },
+    {
+      "error_condition": "Missing required argument",
+      "recovery_action": "Display command usage",
+      "escalation": "Prompt for required input"
+    },
+    {
+      "error_condition": "File not found for /...seed",
+      "recovery_action": "Display error with expected path",
+      "escalation": "Offer to create empty file"
+    },
+    {
+      "error_condition": "Loop already running for /...loop",
+      "recovery_action": "Display current loop status",
+      "escalation": "Offer to restart loop"
+    }
+  ]
+}

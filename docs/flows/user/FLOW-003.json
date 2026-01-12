@@ -1,0 +1,140 @@
+{
+  "id": "FLOW-003",
+  "name": "Worker Task Assignment",
+  "description": "Shift Manager assigns atomic tasks to Workers with minimal context injection to keep them in the Smart Zone.",
+  "feature_id": "FR-002",
+  "story_ids": ["ST-006"],
+  "actor": "system",
+  "trigger": "Shift Manager completes context check and has capacity for Worker supervision",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Manager reads IMPLEMENTATION_PLAN.md to find next unchecked task",
+      "actor": "system",
+      "inputs": ["IMPLEMENTATION_PLAN.md"],
+      "outputs": ["next_task", "task_id"],
+      "conditions": ["unchecked_tasks_exist"],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Manager extracts task details: Mission, Files, Verification Command",
+      "actor": "system",
+      "inputs": ["next_task"],
+      "outputs": ["task_mission", "target_files", "verify_command"],
+      "conditions": [],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Manager prepares minimal context injection package",
+      "actor": "system",
+      "inputs": ["task_mission", "specs/PRD.md_reference", "guardrails_paths"],
+      "outputs": ["context_package"],
+      "conditions": ["package_size < 10% context"],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Manager writes current_task.md with atomic task specification",
+      "actor": "system",
+      "inputs": ["context_package"],
+      "outputs": [".agent/current_task.md"],
+      "conditions": [],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Manager signals Orchestrator to spawn new Worker instance",
+      "actor": "system",
+      "inputs": ["spawn_request"],
+      "outputs": ["worker_spawn_signal"],
+      "conditions": [],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Manager monitors Worker terminal output without intervention",
+      "actor": "system",
+      "inputs": ["worker_stdout", "worker_stderr"],
+      "outputs": ["observation_log"],
+      "conditions": ["no_direct_intervention"],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Manager waits for Worker completion signal",
+      "actor": "system",
+      "inputs": ["worker_exit_code"],
+      "outputs": ["task_result"],
+      "conditions": [],
+      "next_steps": ["STEP-008", "STEP-009"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "If Worker succeeded (exit 0): Mark task complete in IMPLEMENTATION_PLAN.md",
+      "actor": "system",
+      "inputs": ["task_result"],
+      "outputs": ["updated_plan"],
+      "conditions": ["exit_code = 0"],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "If Worker failed: Log failure and prepare retry or escalation",
+      "actor": "system",
+      "inputs": ["task_result", "error_details"],
+      "outputs": ["failure_log", "retry_decision"],
+      "conditions": ["exit_code != 0"],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Manager reads Worker Status Fragment for ADR logging",
+      "actor": "system",
+      "inputs": [".agent/status_fragment.md"],
+      "outputs": ["worker_decisions", "changes_summary"],
+      "conditions": [],
+      "next_steps": []
+    }
+  ],
+  "success_criteria": [
+    "Next unchecked task selected from IMPLEMENTATION_PLAN.md",
+    "Worker receives only: Mission, Guardrails paths, Back Pressure requirement",
+    "No raw code injected into Worker context",
+    "Manager observes but does not intervene in Worker execution",
+    "Task marked complete upon successful Worker termination"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "No unchecked tasks found",
+      "recovery_action": "Signal project completion to Orchestrator",
+      "escalation": "Exit with code 0"
+    },
+    {
+      "error_condition": "Worker spawn fails",
+      "recovery_action": "Retry spawn up to 3 times with 5s delay",
+      "escalation": "Log error and halt pipeline"
+    },
+    {
+      "error_condition": "Worker timeout (>30 minutes)",
+      "recovery_action": "Kill Worker and log timeout",
+      "escalation": "Mark task as blocked and continue to next"
+    },
+    {
+      "error_condition": "Status Fragment not found",
+      "recovery_action": "Generate minimal ADR entry from observation log",
+      "escalation": "Log warning and continue"
+    }
+  ]
+}

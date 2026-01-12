@@ -1,0 +1,172 @@
+{
+  "id": "FLOW-008",
+  "name": "Guardrail System Verification",
+  "description": "Continuous quality control using LLVM/Static analysis, linting, and test suites that enforce back pressure to prevent bad code from being committed.",
+  "feature_id": "FR-004",
+  "story_ids": ["ST-013", "ST-014", "ST-015"],
+  "actor": "system",
+  "trigger": "Worker attempts to commit code changes",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Guardrail system intercepts commit attempt",
+      "actor": "system",
+      "inputs": ["staged_changes"],
+      "outputs": ["verification_queue"],
+      "conditions": [],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Run TypeScript compiler (tsc) verification",
+      "actor": "system",
+      "inputs": ["staged_changes"],
+      "outputs": ["tsc_result", "tsc_exit_code"],
+      "conditions": [],
+      "next_steps": ["STEP-003", "STEP-004"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "If tsc fails: Capture error to LAST_COMPILER_ERROR.log and block commit",
+      "actor": "system",
+      "inputs": ["tsc_result"],
+      "outputs": ["LAST_COMPILER_ERROR.log", "commit_blocked"],
+      "conditions": ["tsc_exit_code != 0"],
+      "next_steps": []
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "If tsc passes: Proceed to unit test verification",
+      "actor": "system",
+      "inputs": ["tsc_result"],
+      "outputs": ["proceed_to_tests"],
+      "conditions": ["tsc_exit_code = 0"],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Run unit test suite (Vitest/Jest)",
+      "actor": "system",
+      "inputs": ["compiled_code"],
+      "outputs": ["test_result", "coverage_report"],
+      "conditions": [],
+      "next_steps": ["STEP-006", "STEP-007"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "If tests fail: Block commit and log test output",
+      "actor": "system",
+      "inputs": ["test_result"],
+      "outputs": ["test_failure_log", "commit_blocked"],
+      "conditions": ["test_exit_code != 0"],
+      "next_steps": []
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "If tests pass: Verify coverage thresholds",
+      "actor": "system",
+      "inputs": ["coverage_report"],
+      "outputs": ["coverage_check"],
+      "conditions": ["services_coverage > 90%", "controllers_coverage > 80%"],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Run KreativReason standards audit via RipGrep",
+      "actor": "system",
+      "inputs": ["staged_changes"],
+      "outputs": ["standards_audit_result"],
+      "conditions": [],
+      "next_steps": ["STEP-009", "STEP-010", "STEP-011"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Verify multi-tenancy: Every Prisma query includes tenantId",
+      "actor": "system",
+      "inputs": ["prisma_queries"],
+      "outputs": ["tenant_audit_result"],
+      "conditions": ["all_queries_have_tenantId"],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Verify validation: All input validated with Zod schemas",
+      "actor": "system",
+      "inputs": ["api_endpoints"],
+      "outputs": ["validation_audit_result"],
+      "conditions": ["all_inputs_validated"],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Verify exports: Only named exports (no export default)",
+      "actor": "system",
+      "inputs": ["module_exports"],
+      "outputs": ["export_audit_result"],
+      "conditions": ["no_default_exports"],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "If all audits pass: Allow commit to proceed",
+      "actor": "system",
+      "inputs": ["all_audit_results"],
+      "outputs": ["commit_allowed"],
+      "conditions": ["all_checks_passed"],
+      "next_steps": ["STEP-013"]
+    },
+    {
+      "id": "STEP-013",
+      "sequence": 13,
+      "action": "Log guardrail verification results for Manager review",
+      "actor": "system",
+      "inputs": ["all_audit_results"],
+      "outputs": ["guardrail_log"],
+      "conditions": [],
+      "next_steps": []
+    }
+  ],
+  "success_criteria": [
+    "No commit allowed unless compiler passes (exit code 0)",
+    "Error output captured to LAST_COMPILER_ERROR.log",
+    "Task completion requires passing tests",
+    "Target >90% coverage for Services, >80% for Controllers",
+    "Every Prisma query includes tenantId",
+    "All input validated with Zod schemas",
+    "Only named exports (no export default)"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "Compiler crashes",
+      "recovery_action": "Log crash and block commit",
+      "escalation": "Alert about environment issue"
+    },
+    {
+      "error_condition": "Test runner unavailable",
+      "recovery_action": "Block commit and log error",
+      "escalation": "Pipeline halted until test runner restored"
+    },
+    {
+      "error_condition": "RipGrep audit timeout",
+      "recovery_action": "Retry with increased timeout",
+      "escalation": "Warn and proceed with partial audit"
+    },
+    {
+      "error_condition": "Coverage below threshold",
+      "recovery_action": "Block commit and report coverage gap",
+      "escalation": "Task must add tests before proceeding"
+    }
+  ]
+}

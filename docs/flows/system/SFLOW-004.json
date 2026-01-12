@@ -1,0 +1,212 @@
+{
+  "id": "SFLOW-004",
+  "name": "Ralph Wiggum Loop - Edit Build Test Cycle",
+  "description": "Internal Worker execution loop that iterates through code editing, compilation, and testing until success or max retries.",
+  "components": ["worker", "editor", "compiler", "test_runner", "git", "filesystem"],
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Worker analyzes task and identifies target files",
+      "component": "worker",
+      "inputs": ["current_task.md"],
+      "outputs": ["file_targets", "edit_plan"],
+      "data_flow": ["ai_reasoning"],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Check for LAST_COMPILER_ERROR.log",
+      "component": "filesystem",
+      "inputs": [".agent/LAST_COMPILER_ERROR.log"],
+      "outputs": ["previous_error_context"],
+      "data_flow": ["filesystem_read"],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "EDIT: Worker applies code changes",
+      "component": "editor",
+      "inputs": ["edit_plan", "target_files"],
+      "outputs": ["modified_files"],
+      "data_flow": ["filesystem_modify"],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "BUILD: Run TypeScript compiler (tsc)",
+      "component": "compiler",
+      "inputs": ["modified_files"],
+      "outputs": ["compiler_output", "exit_code"],
+      "data_flow": ["subprocess_exec"],
+      "next_steps": ["STEP-005", "STEP-007"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "BUILD FAILED: Capture error to LAST_COMPILER_ERROR.log",
+      "component": "filesystem",
+      "inputs": ["compiler_output"],
+      "outputs": ["LAST_COMPILER_ERROR.log"],
+      "data_flow": ["filesystem_write"],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Increment retry counter and check limit",
+      "component": "worker",
+      "inputs": ["retry_count"],
+      "outputs": ["continue_or_escalate"],
+      "data_flow": ["internal_counter"],
+      "next_steps": ["STEP-003", "STEP-013"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "BUILD SUCCESS: Proceed to testing",
+      "component": "compiler",
+      "inputs": ["exit_code = 0"],
+      "outputs": ["build_success_signal"],
+      "data_flow": ["signal"],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "TEST: Run unit test suite",
+      "component": "test_runner",
+      "inputs": ["compiled_code"],
+      "outputs": ["test_output", "coverage_report", "exit_code"],
+      "data_flow": ["subprocess_exec"],
+      "next_steps": ["STEP-009", "STEP-011"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "TEST FAILED: Analyze test output for fix",
+      "component": "worker",
+      "inputs": ["test_output"],
+      "outputs": ["fix_analysis"],
+      "data_flow": ["ai_reasoning"],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Increment retry and return to EDIT",
+      "component": "worker",
+      "inputs": ["retry_count", "fix_analysis"],
+      "outputs": ["continue_or_escalate"],
+      "data_flow": ["internal_counter"],
+      "next_steps": ["STEP-003", "STEP-013"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "TEST SUCCESS: All tests pass",
+      "component": "test_runner",
+      "inputs": ["exit_code = 0"],
+      "outputs": ["test_success_signal"],
+      "data_flow": ["signal"],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "COMMIT: Stage and commit changes",
+      "component": "git",
+      "inputs": ["modified_files", "task_id"],
+      "outputs": ["commit_hash"],
+      "data_flow": ["git_add", "git_commit"],
+      "next_steps": ["STEP-014"]
+    },
+    {
+      "id": "STEP-013",
+      "sequence": 13,
+      "action": "MAX RETRIES: Escalate to Manager",
+      "component": "worker",
+      "inputs": ["retry_count = 5"],
+      "outputs": ["escalation_signal"],
+      "data_flow": ["exit_code_signal"],
+      "next_steps": ["STEP-015"]
+    },
+    {
+      "id": "STEP-014",
+      "sequence": 14,
+      "action": "Clear LAST_COMPILER_ERROR.log on success",
+      "component": "filesystem",
+      "inputs": [],
+      "outputs": ["cleared_log"],
+      "data_flow": ["filesystem_delete"],
+      "next_steps": ["STEP-015"]
+    },
+    {
+      "id": "STEP-015",
+      "sequence": 15,
+      "action": "Exit Ralph Loop",
+      "component": "worker",
+      "inputs": ["loop_result"],
+      "outputs": ["success_or_failure"],
+      "data_flow": ["loop_exit"],
+      "next_steps": []
+    }
+  ],
+  "data_flow": [
+    {
+      "source": "worker",
+      "target": "editor",
+      "data": "edit commands",
+      "protocol": "tool_call"
+    },
+    {
+      "source": "editor",
+      "target": "compiler",
+      "data": "modified source",
+      "protocol": "filesystem"
+    },
+    {
+      "source": "compiler",
+      "target": "test_runner",
+      "data": "compiled artifacts",
+      "protocol": "filesystem"
+    },
+    {
+      "source": "test_runner",
+      "target": "git",
+      "data": "verified changes",
+      "protocol": "success_signal"
+    },
+    {
+      "source": "compiler",
+      "target": "filesystem",
+      "data": "error output",
+      "protocol": "filesystem_write"
+    }
+  ],
+  "error_handling": [
+    {
+      "component": "compiler",
+      "error": "compiler_crash",
+      "recovery": "log error and terminate loop"
+    },
+    {
+      "component": "test_runner",
+      "error": "test_runner_unavailable",
+      "recovery": "skip tests and warn (not recommended)"
+    },
+    {
+      "component": "git",
+      "error": "commit_conflict",
+      "recovery": "rebase and retry commit"
+    },
+    {
+      "component": "worker",
+      "error": "context_overflow",
+      "recovery": "terminate and spawn fresh worker"
+    }
+  ]
+}

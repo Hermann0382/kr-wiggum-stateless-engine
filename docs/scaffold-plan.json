@@ -1,0 +1,1103 @@
+{
+  "artifact_type": "scaffold_plan",
+  "status": "complete",
+  "validation": "passed",
+  "approval_required": true,
+  "approvers": ["Cynthia", "Hermann", "Usama"],
+  "next_phase": "scaffold_apply",
+  "data": {
+    "project_name": "KR-Wiggum Stateless Engine",
+    "version": "2026.1.0",
+    "created_at": "2026-01-11T18:00:00Z",
+    "mode": "plan",
+    "architecture_style": "modular_monolith",
+
+    "domain_mapping": {
+      "domains": [
+        {
+          "name": "state",
+          "description": "File-based state management - the 'brain outside the AI' for persistent memory across agent lifetimes",
+          "root_entity": "ENT-001",
+          "entities": ["ENT-001", "ENT-002", "ENT-003", "ENT-004", "ENT-005", "ENT-006", "ENT-007", "ENT-008", "ENT-009", "ENT-010", "ENT-011"],
+          "feature_ids": ["FR-006"],
+          "dependencies": []
+        },
+        {
+          "name": "distiller",
+          "description": "Brainstorm to specification converter with voice separation, pattern analysis, PRD/PIN generation, and atomic task breakdown",
+          "root_entity": "ENT-002",
+          "entities": ["ENT-002", "ENT-003", "ENT-004", "ENT-005"],
+          "feature_ids": ["FR-001"],
+          "dependencies": ["state"]
+        },
+        {
+          "name": "guardrail",
+          "description": "Back pressure enforcement system with compiler verification, test gates, and KreativReason standards checking",
+          "root_entity": "ENT-010",
+          "entities": ["ENT-010"],
+          "feature_ids": ["FR-004"],
+          "dependencies": ["state"]
+        },
+        {
+          "name": "shift-manager",
+          "description": "Strategic oversight controller with context monitoring, Worker task assignment, ADR management, and shift handoff protocol",
+          "root_entity": "ENT-008",
+          "entities": ["ENT-006", "ENT-007", "ENT-008", "ENT-009"],
+          "feature_ids": ["FR-002", "FR-011"],
+          "dependencies": ["state", "guardrail"]
+        },
+        {
+          "name": "worker",
+          "description": "Stateless atomic task executor implementing the Ralph Wiggum Loop (Edit-Build-Test-Fix) with self-destruct protocol",
+          "root_entity": "ENT-011",
+          "entities": ["ENT-005", "ENT-010", "ENT-011"],
+          "feature_ids": ["FR-003"],
+          "dependencies": ["state", "guardrail"]
+        },
+        {
+          "name": "orchestrator",
+          "description": "Process lifecycle manager handling Manager/Worker spawning, exit code detection, and error recovery",
+          "root_entity": null,
+          "entities": [],
+          "feature_ids": ["FR-005"],
+          "dependencies": ["shift-manager", "worker"]
+        },
+        {
+          "name": "watcher",
+          "description": "Node.js file watcher providing WebSocket bridge between CLI agents and HTML dashboard via Socket.io",
+          "root_entity": "ENT-009",
+          "entities": ["ENT-009", "ENT-004"],
+          "feature_ids": ["FR-008"],
+          "dependencies": ["state"]
+        },
+        {
+          "name": "dashboard",
+          "description": "Neon-liquid industrial terminal UI with real-time context bars, roadmap progress, guardrail status, and Crisis Mode",
+          "root_entity": null,
+          "entities": ["ENT-009"],
+          "feature_ids": ["FR-007", "FR-009"],
+          "dependencies": ["watcher"]
+        },
+        {
+          "name": "commands",
+          "description": "Slash command interface (/...seed, /...plan, /...loop, /...status, /...digest) for human-friendly pipeline control",
+          "root_entity": null,
+          "entities": [],
+          "feature_ids": ["FR-010"],
+          "dependencies": ["distiller", "orchestrator"]
+        }
+      ],
+      "shared_entities": ["ENT-001", "ENT-009"],
+      "dependency_graph": {
+        "state": [],
+        "distiller": ["state"],
+        "guardrail": ["state"],
+        "shift-manager": ["state", "guardrail"],
+        "worker": ["state", "guardrail"],
+        "orchestrator": ["shift-manager", "worker"],
+        "watcher": ["state"],
+        "dashboard": ["watcher"],
+        "commands": ["distiller", "orchestrator"]
+      }
+    },
+
+    "design_brief": {
+      "preset": "creative",
+      "colors": {
+        "primary": "#00d2ff",
+        "secondary": "#0d1117",
+        "accent": ["#ff4b2b", "#f9826c", "#00d2ff"],
+        "background": "#0d1117",
+        "surface": "#161b22",
+        "text_primary": "#e6edf3",
+        "text_secondary": "#7d8590",
+        "success": "#3fb950",
+        "warning": "#d29922",
+        "error": "#f85149",
+        "smart_zone": "#00d2ff",
+        "degrading_zone": "#f9826c",
+        "dumb_zone": "#ff4b2b"
+      },
+      "glassmorphism": {
+        "enabled": false,
+        "blur_intensity": null,
+        "opacity": null,
+        "border_opacity": null,
+        "shadow_color_opacity": null,
+        "floating_orbs": false
+      },
+      "typography": {
+        "font_family_heading": "Inter",
+        "font_family_body": "Inter",
+        "font_family_mono": "Fira Code",
+        "base_size": "16px",
+        "scale_ratio": 1.25
+      },
+      "dark_mode_support": true,
+      "dark_mode_default": true,
+      "component_style": "industrial-terminal",
+      "special_effects": {
+        "neon_glow": true,
+        "liquid_transitions": true,
+        "pulsing_heartbeat": true
+      }
+    },
+
+    "feature_selections": {
+      "auth": "none",
+      "db": "none",
+      "storage": "local",
+      "realtime": true,
+      "ci": true,
+      "docs": true,
+      "framework": "express",
+      "language": "typescript",
+      "runtime": "node",
+      "test_framework": "vitest",
+      "validation": "zod",
+      "websocket": "socket.io"
+    },
+
+    "inject_architecture_rules": false,
+    "inject_husky": true,
+    "inject_eslint_config": true,
+    "inject_design_system": true,
+
+    "templates_to_apply": [
+      {
+        "id": "SCAFFOLD-001",
+        "name": "Package Configuration",
+        "source_path": null,
+        "target_path": "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/",
+        "variables": {
+          "project_name": "kr-wiggum-stateless-engine",
+          "version": "1.0.0"
+        },
+        "files_to_generate": [
+          "package.json",
+          "tsconfig.json",
+          "vitest.config.ts",
+          ".gitignore",
+          ".eslintrc.cjs",
+          ".prettierrc"
+        ]
+      },
+      {
+        "id": "SCAFFOLD-002",
+        "name": "Directory Structure",
+        "source_path": null,
+        "target_path": "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/",
+        "variables": {},
+        "files_to_generate": [
+          ".agent/.gitkeep",
+          ".agent/prompts/.gitkeep",
+          ".agent/logs/.gitkeep",
+          ".ralph/.gitkeep",
+          ".ralph/specs/.gitkeep",
+          ".ralph/logs/.gitkeep",
+          "specs/.gitkeep",
+          "src/schemas/.gitkeep",
+          "src/services/.gitkeep",
+          "src/services/distiller/.gitkeep",
+          "src/services/shift-manager/.gitkeep",
+          "src/services/worker/.gitkeep",
+          "src/services/guardrail/.gitkeep",
+          "src/services/orchestrator/.gitkeep",
+          "src/state/.gitkeep",
+          "src/watcher/.gitkeep",
+          "src/commands/.gitkeep",
+          "src/types/.gitkeep",
+          "public/css/.gitkeep",
+          "public/js/.gitkeep",
+          "scripts/.gitkeep",
+          "tests/schemas/.gitkeep",
+          "tests/services/.gitkeep",
+          "tests/integration/.gitkeep"
+        ]
+      },
+      {
+        "id": "SCAFFOLD-003",
+        "name": "Zod Schemas for Entities",
+        "source_path": null,
+        "target_path": "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/src/schemas/",
+        "variables": {
+          "entities": "ENT-001 through ENT-011"
+        },
+        "files_to_generate": [
+          "project.schema.ts",
+          "prd.schema.ts",
+          "specification.schema.ts",
+          "implementation-plan.schema.ts",
+          "task.schema.ts",
+          "adr.schema.ts",
+          "shift-report.schema.ts",
+          "shift-handoff.schema.ts",
+          "telemetry.schema.ts",
+          "compiler-error.schema.ts",
+          "status-fragment.schema.ts",
+          "index.ts"
+        ]
+      },
+      {
+        "id": "SCAFFOLD-004",
+        "name": "State Management Services",
+        "source_path": null,
+        "target_path": "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/src/state/",
+        "variables": {},
+        "files_to_generate": [
+          "file-state-manager.ts",
+          "project-state-manager.ts",
+          "implementation-plan-manager.ts",
+          "telemetry-manager.ts",
+          "adr-manager.ts",
+          "compiler-error-manager.ts",
+          "index.ts"
+        ]
+      },
+      {
+        "id": "SCAFFOLD-005",
+        "name": "Distiller Service",
+        "source_path": null,
+        "target_path": "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/src/services/distiller/",
+        "variables": {
+          "feature_id": "FR-001"
+        },
+        "files_to_generate": [
+          "brainstorm-parser.ts",
+          "pattern-analyzer.ts",
+          "prd-generator.ts",
+          "pin-generator.ts",
+          "atomic-task-breakdown.ts",
+          "index.ts"
+        ]
+      },
+      {
+        "id": "SCAFFOLD-006",
+        "name": "Shift Manager Service",
+        "source_path": null,
+        "target_path": "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/src/services/shift-manager/",
+        "variables": {
+          "feature_id": "FR-002"
+        },
+        "files_to_generate": [
+          "context-monitor.ts",
+          "task-selector.ts",
+          "shift-handoff-writer.ts",
+          "adr-logger.ts",
+          "index.ts"
+        ]
+      },
+      {
+        "id": "SCAFFOLD-007",
+        "name": "Worker Service",
+        "source_path": null,
+        "target_path": "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/src/services/worker/",
+        "variables": {
+          "feature_id": "FR-003"
+        },
+        "files_to_generate": [
+          "fresh-context-boot.ts",
+          "ralph-wiggum-loop.ts",
+          "status-fragment-writer.ts",
+          "self-destruct.ts",
+          "index.ts"
+        ]
+      },
+      {
+        "id": "SCAFFOLD-008",
+        "name": "Guardrail Service",
+        "source_path": null,
+        "target_path": "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/src/services/guardrail/",
+        "variables": {
+          "feature_id": "FR-004"
+        },
+        "files_to_generate": [
+          "compiler-verifier.ts",
+          "test-gate.ts",
+          "kr-standards-checker.ts",
+          "index.ts"
+        ]
+      },
+      {
+        "id": "SCAFFOLD-009",
+        "name": "Orchestrator Scripts",
+        "source_path": null,
+        "target_path": "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/",
+        "variables": {
+          "feature_id": "FR-005"
+        },
+        "files_to_generate": [
+          "scripts/orchestrate.sh",
+          "src/services/orchestrator/manager-lifecycle.ts",
+          "src/services/orchestrator/worker-spawner.ts",
+          "src/services/orchestrator/error-recovery.ts",
+          "src/services/orchestrator/index.ts"
+        ]
+      },
+      {
+        "id": "SCAFFOLD-010",
+        "name": "Watcher Service",
+        "source_path": null,
+        "target_path": "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/src/watcher/",
+        "variables": {
+          "feature_id": "FR-008"
+        },
+        "files_to_generate": [
+          "telemetry-watcher.ts",
+          "roadmap-watcher.ts",
+          "socket-server.ts",
+          "index.ts"
+        ]
+      },
+      {
+        "id": "SCAFFOLD-011",
+        "name": "Express Server",
+        "source_path": null,
+        "target_path": "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/src/",
+        "variables": {},
+        "files_to_generate": [
+          "server.ts",
+          "app.ts"
+        ]
+      },
+      {
+        "id": "SCAFFOLD-012",
+        "name": "HTML Dashboard",
+        "source_path": null,
+        "target_path": "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/public/",
+        "variables": {
+          "feature_ids": ["FR-007", "FR-009"]
+        },
+        "files_to_generate": [
+          "index.html",
+          "css/neon-liquid.css",
+          "css/dashboard.css",
+          "js/socket-client.js",
+          "js/dashboard.js",
+          "js/crisis-mode.js"
+        ]
+      },
+      {
+        "id": "SCAFFOLD-013",
+        "name": "Slash Commands",
+        "source_path": null,
+        "target_path": "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/src/commands/",
+        "variables": {
+          "feature_id": "FR-010"
+        },
+        "files_to_generate": [
+          "seed.ts",
+          "plan.ts",
+          "loop.ts",
+          "status.ts",
+          "digest.ts",
+          "index.ts"
+        ]
+      },
+      {
+        "id": "SCAFFOLD-014",
+        "name": "TypeScript Types",
+        "source_path": null,
+        "target_path": "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/src/types/",
+        "variables": {},
+        "files_to_generate": [
+          "project.types.ts",
+          "telemetry.types.ts",
+          "agent.types.ts",
+          "guardrail.types.ts",
+          "index.ts"
+        ]
+      },
+      {
+        "id": "SCAFFOLD-015",
+        "name": "Test Stubs",
+        "source_path": null,
+        "target_path": "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/tests/",
+        "variables": {},
+        "files_to_generate": [
+          "schemas/project.schema.test.ts",
+          "schemas/telemetry.schema.test.ts",
+          "services/file-state-manager.test.ts",
+          "services/telemetry-manager.test.ts",
+          "integration/distiller.integration.test.ts",
+          "integration/guardrails.integration.test.ts"
+        ]
+      },
+      {
+        "id": "SCAFFOLD-016",
+        "name": "Progress Tracking Files",
+        "source_path": null,
+        "target_path": "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/",
+        "variables": {
+          "project_name": "KR-Wiggum Stateless Engine"
+        },
+        "files_to_generate": [
+          "docs/work-log.json",
+          "CHANGELOG.md"
+        ]
+      }
+    ],
+
+    "files_to_generate_detailed": [
+      {
+        "path": "package.json",
+        "purpose": "Node.js project manifest with all dependencies",
+        "template_id": "SCAFFOLD-001",
+        "content_description": "Defines project metadata, scripts (build, test, dev, start), and dependencies including typescript, express, socket.io, zod, vitest"
+      },
+      {
+        "path": "tsconfig.json",
+        "purpose": "TypeScript configuration with strict mode enabled",
+        "template_id": "SCAFFOLD-001",
+        "content_description": "ES2022 target, ESM modules, strict mode, path aliases, include/exclude patterns"
+      },
+      {
+        "path": "vitest.config.ts",
+        "purpose": "Vitest test runner configuration",
+        "template_id": "SCAFFOLD-001",
+        "content_description": "Test patterns, coverage thresholds (90% services, 80% controllers), TypeScript support"
+      },
+      {
+        "path": ".gitignore",
+        "purpose": "Git ignore patterns",
+        "template_id": "SCAFFOLD-001",
+        "content_description": "node_modules, dist, .env, coverage, .DS_Store, IDE files"
+      },
+      {
+        "path": ".eslintrc.cjs",
+        "purpose": "ESLint configuration for code quality",
+        "template_id": "SCAFFOLD-001",
+        "content_description": "TypeScript parser, named exports rule, import ordering, no-default-export"
+      },
+      {
+        "path": ".prettierrc",
+        "purpose": "Code formatting configuration",
+        "template_id": "SCAFFOLD-001",
+        "content_description": "Single quotes, trailing commas, 100 char width, 2 space indent"
+      },
+      {
+        "path": "src/schemas/project.schema.ts",
+        "purpose": "Zod schema for Project entity (ENT-001)",
+        "template_id": "SCAFFOLD-003",
+        "content_description": "Validates id, name, owner_email, version, status enum, timestamps, cost tracking"
+      },
+      {
+        "path": "src/schemas/prd.schema.ts",
+        "purpose": "Zod schema for PRD entity (ENT-002)",
+        "template_id": "SCAFFOLD-003",
+        "content_description": "Validates version, file_path, content_hash, user_stories_count, is_immutable flag"
+      },
+      {
+        "path": "src/schemas/specification.schema.ts",
+        "purpose": "Zod schema for Specification entity (ENT-003)",
+        "template_id": "SCAFFOLD-003",
+        "content_description": "Validates type enum (prd, pin, architecture, concepts), keywords JSON array"
+      },
+      {
+        "path": "src/schemas/implementation-plan.schema.ts",
+        "purpose": "Zod schema for ImplementationPlan entity (ENT-004)",
+        "template_id": "SCAFFOLD-003",
+        "content_description": "Validates total_tasks, completed_tasks, progress_percent, dependency_order enum"
+      },
+      {
+        "path": "src/schemas/task.schema.ts",
+        "purpose": "Zod schema for Task entity (ENT-005)",
+        "template_id": "SCAFFOLD-003",
+        "content_description": "Validates id pattern ST-XXX, status enum, checkbox_state, dependency_layer, atomicity constraints"
+      },
+      {
+        "path": "src/schemas/adr.schema.ts",
+        "purpose": "Zod schema for ADR entity (ENT-006)",
+        "template_id": "SCAFFOLD-003",
+        "content_description": "Validates id pattern ADR-XXX, decision, rationale (min 50 chars), keywords, commit_hash"
+      },
+      {
+        "path": "src/schemas/shift-report.schema.ts",
+        "purpose": "Zod schema for ShiftReport entity (ENT-007)",
+        "template_id": "SCAFFOLD-003",
+        "content_description": "Validates executive_summary, tasks_completed, llvm_status, tests_status, context_fill_at_end"
+      },
+      {
+        "path": "src/schemas/shift-handoff.schema.ts",
+        "purpose": "Zod schema for ShiftHandoff entity (ENT-008)",
+        "template_id": "SCAFFOLD-003",
+        "content_description": "Validates accomplishments, architecture_delta, blockers, last_5_adrs (max 5 items)"
+      },
+      {
+        "path": "src/schemas/telemetry.schema.ts",
+        "purpose": "Zod schema for Telemetry entity (ENT-009)",
+        "template_id": "SCAFFOLD-003",
+        "content_description": "Validates agent_type enum, context_fill_percent, zone enum (smart/degrading/dumb), guardrail_status"
+      },
+      {
+        "path": "src/schemas/compiler-error.schema.ts",
+        "purpose": "Zod schema for CompilerError entity (ENT-010)",
+        "template_id": "SCAFFOLD-003",
+        "content_description": "Validates error_type enum, truncated_output (max 1000 tokens), is_cleared flag"
+      },
+      {
+        "path": "src/schemas/status-fragment.schema.ts",
+        "purpose": "Zod schema for StatusFragment entity (ENT-011)",
+        "template_id": "SCAFFOLD-003",
+        "content_description": "Validates task_id, what_fixed, what_changed, patterns_used, token_count (max 500)"
+      },
+      {
+        "path": "src/schemas/index.ts",
+        "purpose": "Barrel export for all schemas",
+        "template_id": "SCAFFOLD-003",
+        "content_description": "Named exports for all schema files"
+      },
+      {
+        "path": "src/state/file-state-manager.ts",
+        "purpose": "Base class for file-based state operations",
+        "template_id": "SCAFFOLD-004",
+        "content_description": "Abstract class with read, write, watch, hash methods for JSON/Markdown files"
+      },
+      {
+        "path": "src/state/project-state-manager.ts",
+        "purpose": "Manager for .agent/project.json",
+        "template_id": "SCAFFOLD-004",
+        "content_description": "CRUD operations for project state with ProjectSchema validation"
+      },
+      {
+        "path": "src/state/implementation-plan-manager.ts",
+        "purpose": "Manager for IMPLEMENTATION_PLAN.md",
+        "template_id": "SCAFFOLD-004",
+        "content_description": "Checkbox parsing, progress calculation, next unchecked task retrieval"
+      },
+      {
+        "path": "src/state/telemetry-manager.ts",
+        "purpose": "Manager for .ralph/telemetry.json",
+        "template_id": "SCAFFOLD-004",
+        "content_description": "Context fill calculation, zone detection (smart/degrading/dumb), atomic JSON updates"
+      },
+      {
+        "path": "src/state/adr-manager.ts",
+        "purpose": "Manager for .agent/ADR.md",
+        "template_id": "SCAFFOLD-004",
+        "content_description": "Chronological append, commit linking, keyword formatting for RipGrep"
+      },
+      {
+        "path": "src/state/compiler-error-manager.ts",
+        "purpose": "Manager for LAST_COMPILER_ERROR.log",
+        "template_id": "SCAFFOLD-004",
+        "content_description": "Error capture, truncation to 1000 tokens, clearing on success"
+      },
+      {
+        "path": "src/state/index.ts",
+        "purpose": "Barrel export for state managers",
+        "template_id": "SCAFFOLD-004",
+        "content_description": "Named exports for all state manager files"
+      },
+      {
+        "path": "src/services/distiller/brainstorm-parser.ts",
+        "purpose": "Voice separation for brainstorm intake",
+        "template_id": "SCAFFOLD-005",
+        "content_description": "Separates 'Voice of Client' from 'Voice of Engineer', filters noise"
+      },
+      {
+        "path": "src/services/distiller/pattern-analyzer.ts",
+        "purpose": "RipGrep integration for pattern analysis",
+        "template_id": "SCAFFOLD-005",
+        "content_description": "Executes minimum 15 RipGrep searches, returns keyword map"
+      },
+      {
+        "path": "src/services/distiller/prd-generator.ts",
+        "purpose": "PRD.md generation",
+        "template_id": "SCAFFOLD-005",
+        "content_description": "Generates specs/PRD.md with User Stories, Business Logic, Success Criteria"
+      },
+      {
+        "path": "src/services/distiller/pin-generator.ts",
+        "purpose": "Specification Index (PIN) generation",
+        "template_id": "SCAFFOLD-005",
+        "content_description": "Generates specs/index.md with keywords for RipGrep optimization"
+      },
+      {
+        "path": "src/services/distiller/atomic-task-breakdown.ts",
+        "purpose": "Task breakdown logic",
+        "template_id": "SCAFFOLD-005",
+        "content_description": "Creates tasks: 15-30 min, 3-5 files, <150 LOC, ordered by dependency"
+      },
+      {
+        "path": "src/services/distiller/index.ts",
+        "purpose": "Distiller orchestrator",
+        "template_id": "SCAFFOLD-005",
+        "content_description": "Orchestrates parser, analyzer, generators for full distillation pipeline"
+      },
+      {
+        "path": "src/services/shift-manager/context-monitor.ts",
+        "purpose": "Context window monitoring",
+        "template_id": "SCAFFOLD-006",
+        "content_description": "Calculates context_fill_percent, triggers rotation at 60%"
+      },
+      {
+        "path": "src/services/shift-manager/task-selector.ts",
+        "purpose": "Worker task assignment",
+        "template_id": "SCAFFOLD-006",
+        "content_description": "Selects next unchecked task, prepares minimal context injection"
+      },
+      {
+        "path": "src/services/shift-manager/shift-handoff-writer.ts",
+        "purpose": "Shift handoff document generation",
+        "template_id": "SCAFFOLD-006",
+        "content_description": "Writes SHIFT_HANDOFF.md with Accomplishments, Delta, Blockers, last 5 ADRs"
+      },
+      {
+        "path": "src/services/shift-manager/adr-logger.ts",
+        "purpose": "ADR management from Worker outputs",
+        "template_id": "SCAFFOLD-006",
+        "content_description": "Reads Status Fragments, distills into ADR entries"
+      },
+      {
+        "path": "src/services/shift-manager/index.ts",
+        "purpose": "Shift Manager main service",
+        "template_id": "SCAFFOLD-006",
+        "content_description": "Full Manager lifecycle with exit code 10 for rotation, 0 for completion"
+      },
+      {
+        "path": "src/services/worker/fresh-context-boot.ts",
+        "purpose": "Clean context initialization",
+        "template_id": "SCAFFOLD-007",
+        "content_description": "Starts Worker with empty context, receives only PRD.md and current_task.md"
+      },
+      {
+        "path": "src/services/worker/ralph-wiggum-loop.ts",
+        "purpose": "Edit-Build-Test-Fix cycle",
+        "template_id": "SCAFFOLD-007",
+        "content_description": "Iterates until tests pass (exit 0), max 5 retry attempts"
+      },
+      {
+        "path": "src/services/worker/status-fragment-writer.ts",
+        "purpose": "Status fragment generation",
+        "template_id": "SCAFFOLD-007",
+        "content_description": "Documents what_fixed, what_changed, patterns_used (<500 tokens)"
+      },
+      {
+        "path": "src/services/worker/self-destruct.ts",
+        "purpose": "Worker termination protocol",
+        "template_id": "SCAFFOLD-007",
+        "content_description": "Kills process, clears memory, resets telemetry to 0%"
+      },
+      {
+        "path": "src/services/worker/index.ts",
+        "purpose": "Worker orchestrator",
+        "template_id": "SCAFFOLD-007",
+        "content_description": "Orchestrates Worker lifecycle components"
+      },
+      {
+        "path": "src/services/guardrail/compiler-verifier.ts",
+        "purpose": "TypeScript compiler wrapper",
+        "template_id": "SCAFFOLD-008",
+        "content_description": "Executes tsc, captures exit code and error output"
+      },
+      {
+        "path": "src/services/guardrail/test-gate.ts",
+        "purpose": "Unit test verification",
+        "template_id": "SCAFFOLD-008",
+        "content_description": "Runs vitest, enforces coverage (>90% services, >80% controllers)"
+      },
+      {
+        "path": "src/services/guardrail/kr-standards-checker.ts",
+        "purpose": "KreativReason standards audit",
+        "template_id": "SCAFFOLD-008",
+        "content_description": "Checks tenantId, Zod usage, named exports via RipGrep"
+      },
+      {
+        "path": "src/services/guardrail/index.ts",
+        "purpose": "Guardrail orchestrator",
+        "template_id": "SCAFFOLD-008",
+        "content_description": "Runs all checks, returns unified status, updates telemetry"
+      },
+      {
+        "path": "scripts/orchestrate.sh",
+        "purpose": "Main orchestrator shell script",
+        "template_id": "SCAFFOLD-009",
+        "content_description": "Manages Manager/Worker lifecycles, exit code handling, 5s retry sleep"
+      },
+      {
+        "path": "src/services/orchestrator/manager-lifecycle.ts",
+        "purpose": "Manager process management",
+        "template_id": "SCAFFOLD-009",
+        "content_description": "Launches Manager with HANDOFF_FILE, monitors exit codes"
+      },
+      {
+        "path": "src/services/orchestrator/worker-spawner.ts",
+        "purpose": "Worker process spawning",
+        "template_id": "SCAFFOLD-009",
+        "content_description": "Spawns fresh Claude Code instance per task, kills after completion"
+      },
+      {
+        "path": "src/services/orchestrator/error-recovery.ts",
+        "purpose": "Crash recovery logic",
+        "template_id": "SCAFFOLD-009",
+        "content_description": "Detects non-standard exit codes, max 3 consecutive retries"
+      },
+      {
+        "path": "src/services/orchestrator/index.ts",
+        "purpose": "Orchestrator main service",
+        "template_id": "SCAFFOLD-009",
+        "content_description": "Coordinates Manager and Worker lifecycle management"
+      },
+      {
+        "path": "src/watcher/telemetry-watcher.ts",
+        "purpose": "Telemetry file watcher",
+        "template_id": "SCAFFOLD-010",
+        "content_description": "fs.watch for telemetry.json, emits Socket.io events"
+      },
+      {
+        "path": "src/watcher/roadmap-watcher.ts",
+        "purpose": "Roadmap file watcher",
+        "template_id": "SCAFFOLD-010",
+        "content_description": "fs.watchFile for IMPLEMENTATION_PLAN.md, calculates progress"
+      },
+      {
+        "path": "src/watcher/socket-server.ts",
+        "purpose": "Socket.io server setup",
+        "template_id": "SCAFFOLD-010",
+        "content_description": "Socket.io on Express, handles telemetry and crisis events"
+      },
+      {
+        "path": "src/watcher/index.ts",
+        "purpose": "Watcher orchestrator",
+        "template_id": "SCAFFOLD-010",
+        "content_description": "Initializes all watchers and Socket.io server"
+      },
+      {
+        "path": "src/server.ts",
+        "purpose": "Express server entry point",
+        "template_id": "SCAFFOLD-011",
+        "content_description": "Starts HTTP server on port 3000, serves dashboard"
+      },
+      {
+        "path": "src/app.ts",
+        "purpose": "Express application setup",
+        "template_id": "SCAFFOLD-011",
+        "content_description": "Static file serving for /public, Socket.io integration"
+      },
+      {
+        "path": "public/index.html",
+        "purpose": "Dashboard HTML entry point",
+        "template_id": "SCAFFOLD-012",
+        "content_description": "Mission Control layout with context bars, progress, guardrails, Crisis button"
+      },
+      {
+        "path": "public/css/neon-liquid.css",
+        "purpose": "Neon-liquid design system CSS",
+        "template_id": "SCAFFOLD-012",
+        "content_description": "Dark theme, neon glow effects, liquid transitions, zone colors"
+      },
+      {
+        "path": "public/css/dashboard.css",
+        "purpose": "Dashboard-specific styles",
+        "template_id": "SCAFFOLD-012",
+        "content_description": "Context bars, progress visualization, guardrail panels layout"
+      },
+      {
+        "path": "public/js/socket-client.js",
+        "purpose": "Socket.io client connection",
+        "template_id": "SCAFFOLD-012",
+        "content_description": "Connects to watcher, receives telemetry and roadmap events"
+      },
+      {
+        "path": "public/js/dashboard.js",
+        "purpose": "Dashboard UI logic",
+        "template_id": "SCAFFOLD-012",
+        "content_description": "Updates progress bars, zone colors, task display"
+      },
+      {
+        "path": "public/js/crisis-mode.js",
+        "purpose": "Crisis Mode implementation",
+        "template_id": "SCAFFOLD-012",
+        "content_description": "Crisis button handler, sends pkill commands, git reset"
+      },
+      {
+        "path": "src/commands/seed.ts",
+        "purpose": "/...seed command implementation",
+        "template_id": "SCAFFOLD-013",
+        "content_description": "Triggers Distiller with linked file, generates specs"
+      },
+      {
+        "path": "src/commands/plan.ts",
+        "purpose": "/...plan command implementation",
+        "template_id": "SCAFFOLD-013",
+        "content_description": "Analyzes gap between specs and code, updates IMPLEMENTATION_PLAN.md"
+      },
+      {
+        "path": "src/commands/loop.ts",
+        "purpose": "/...loop command implementation",
+        "template_id": "SCAFFOLD-013",
+        "content_description": "Starts orchestrate.sh in background, activates Manager"
+      },
+      {
+        "path": "src/commands/status.ts",
+        "purpose": "/...status command implementation",
+        "template_id": "SCAFFOLD-013",
+        "content_description": "Renders terminal-friendly progress, context, ADR summary"
+      },
+      {
+        "path": "src/commands/digest.ts",
+        "purpose": "/...digest command implementation",
+        "template_id": "SCAFFOLD-013",
+        "content_description": "Handles unstructured input, proposes 5-10 atomic tasks"
+      },
+      {
+        "path": "src/commands/index.ts",
+        "purpose": "Command registry",
+        "template_id": "SCAFFOLD-013",
+        "content_description": "Maps command names to handlers, provides help text"
+      },
+      {
+        "path": "src/types/project.types.ts",
+        "purpose": "Project-related TypeScript types",
+        "template_id": "SCAFFOLD-014",
+        "content_description": "Inferred types from Zod schemas for Project, PRD, Task"
+      },
+      {
+        "path": "src/types/telemetry.types.ts",
+        "purpose": "Telemetry-related types",
+        "template_id": "SCAFFOLD-014",
+        "content_description": "Zone enum, TelemetryState, ContextZone types"
+      },
+      {
+        "path": "src/types/agent.types.ts",
+        "purpose": "Agent-related types",
+        "template_id": "SCAFFOLD-014",
+        "content_description": "ManagerSession, WorkerSession, AgentType enum"
+      },
+      {
+        "path": "src/types/guardrail.types.ts",
+        "purpose": "Guardrail-related types",
+        "template_id": "SCAFFOLD-014",
+        "content_description": "GuardrailStatus, CheckResult, CoverageReport types"
+      },
+      {
+        "path": "src/types/index.ts",
+        "purpose": "Barrel export for types",
+        "template_id": "SCAFFOLD-014",
+        "content_description": "Named exports for all type files"
+      },
+      {
+        "path": "tests/schemas/project.schema.test.ts",
+        "purpose": "Project schema tests",
+        "template_id": "SCAFFOLD-015",
+        "content_description": "Valid data passes, invalid data throws ZodError"
+      },
+      {
+        "path": "tests/schemas/telemetry.schema.test.ts",
+        "purpose": "Telemetry schema tests",
+        "template_id": "SCAFFOLD-015",
+        "content_description": "Zone transitions validate, context fill constraints"
+      },
+      {
+        "path": "tests/services/file-state-manager.test.ts",
+        "purpose": "File state manager tests",
+        "template_id": "SCAFFOLD-015",
+        "content_description": "Read/write operations, hash generation"
+      },
+      {
+        "path": "tests/services/telemetry-manager.test.ts",
+        "purpose": "Telemetry manager tests",
+        "template_id": "SCAFFOLD-015",
+        "content_description": "Zone detection, context fill calculation"
+      },
+      {
+        "path": "tests/integration/distiller.integration.test.ts",
+        "purpose": "Distiller integration tests",
+        "template_id": "SCAFFOLD-015",
+        "content_description": "End-to-end distillation pipeline"
+      },
+      {
+        "path": "tests/integration/guardrails.integration.test.ts",
+        "purpose": "Guardrails integration tests",
+        "template_id": "SCAFFOLD-015",
+        "content_description": "All guardrails run with unified status"
+      },
+      {
+        "path": "docs/work-log.json",
+        "purpose": "Work session tracking for crash recovery",
+        "template_id": "SCAFFOLD-016",
+        "content_description": "Empty work log ready for sessions"
+      },
+      {
+        "path": "CHANGELOG.md",
+        "purpose": "Human-readable change history",
+        "template_id": "SCAFFOLD-016",
+        "content_description": "Initial changelog with scaffolding entry"
+      }
+    ],
+
+    "directory_structure": {
+      "/Users/hermannrohr/Documents/GitHub/kr-wiggum-stateless-engine/": "Project root",
+      ".agent/": "File-based state for agent memory",
+      ".agent/prompts/": "Agent prompt templates",
+      ".agent/logs/": "Activity logs for forensics",
+      ".ralph/": "Telemetry state directory",
+      ".ralph/specs/": "Generated specifications",
+      ".ralph/logs/": "Telemetry logs",
+      "specs/": "Project specifications (PRD.md, index.md)",
+      "src/": "Source code root",
+      "src/schemas/": "Zod schemas for all 11 entities",
+      "src/services/": "Business logic services",
+      "src/services/distiller/": "FR-001: Brainstorm to spec conversion",
+      "src/services/shift-manager/": "FR-002: Strategic oversight controller",
+      "src/services/worker/": "FR-003: Atomic task executor",
+      "src/services/guardrail/": "FR-004: Back pressure enforcement",
+      "src/services/orchestrator/": "FR-005: Process lifecycle manager",
+      "src/state/": "FR-006: File-based state management",
+      "src/watcher/": "FR-008: File watcher and Socket.io bridge",
+      "src/commands/": "FR-010: Slash command handlers",
+      "src/types/": "TypeScript interface definitions",
+      "public/": "FR-007: HTML Dashboard assets",
+      "public/css/": "Neon-liquid CSS styles",
+      "public/js/": "Frontend JavaScript",
+      "scripts/": "Shell scripts including orchestrate.sh",
+      "tests/": "Test files",
+      "tests/schemas/": "Schema validation tests",
+      "tests/services/": "Service unit tests",
+      "tests/integration/": "Integration tests",
+      "docs/": "Generated documentation (already exists)"
+    },
+
+    "dependencies": {
+      "production": [
+        "express@^4.18.0",
+        "socket.io@^4.6.0",
+        "zod@^3.22.0",
+        "chokidar@^3.5.0"
+      ],
+      "development": [
+        "typescript@^5.0.0",
+        "vitest@^1.0.0",
+        "@vitest/coverage-v8@^1.0.0",
+        "eslint@^8.50.0",
+        "@typescript-eslint/parser@^6.0.0",
+        "@typescript-eslint/eslint-plugin@^6.0.0",
+        "eslint-plugin-import@^2.29.0",
+        "prettier@^3.0.0",
+        "husky@^8.0.0",
+        "lint-staged@^15.0.0",
+        "@types/node@^20.0.0",
+        "@types/express@^4.17.0",
+        "tsx@^4.0.0"
+      ]
+    },
+
+    "environment_variables": [
+      {
+        "name": "PORT",
+        "description": "HTTP server port for dashboard",
+        "example": "3000",
+        "required": false,
+        "default": "3000"
+      },
+      {
+        "name": "NODE_ENV",
+        "description": "Node.js environment",
+        "example": "development",
+        "required": false,
+        "default": "development"
+      },
+      {
+        "name": "CONTEXT_WINDOW_SIZE",
+        "description": "AI context window token limit",
+        "example": "200000",
+        "required": false,
+        "default": "200000"
+      },
+      {
+        "name": "MANAGER_ROTATION_THRESHOLD",
+        "description": "Context fill percentage to trigger Manager rotation",
+        "example": "60",
+        "required": false,
+        "default": "60"
+      },
+      {
+        "name": "WORKER_SMART_ZONE_LIMIT",
+        "description": "Context fill percentage limit for Worker Smart Zone",
+        "example": "40",
+        "required": false,
+        "default": "40"
+      },
+      {
+        "name": "HOURLY_RATE_USD",
+        "description": "Autonomous operation cost per hour",
+        "example": "10.42",
+        "required": false,
+        "default": "10.42"
+      }
+    ],
+
+    "npm_scripts": {
+      "build": "tsc",
+      "dev": "tsx watch src/server.ts",
+      "start": "node dist/server.js",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "test:coverage": "vitest run --coverage",
+      "lint": "eslint src --ext .ts",
+      "lint:fix": "eslint src --ext .ts --fix",
+      "format": "prettier --write \"src/**/*.ts\"",
+      "typecheck": "tsc --noEmit",
+      "prepare": "husky install"
+    },
+
+    "next_steps": [
+      "1. Review domain mapping and confirm bounded contexts are correct",
+      "2. Review design system colors match neon-liquid industrial terminal aesthetic",
+      "3. Approve scaffold plan",
+      "4. Run scaffold apply to generate all files",
+      "5. Execute: npm install",
+      "6. Execute: npm run build to verify TypeScript compilation",
+      "7. Execute: npm test to verify test setup",
+      "8. Start development server: npm run dev",
+      "9. Open dashboard at http://localhost:3000"
+    ],
+
+    "estimated_setup_time": "45 minutes",
+
+    "file_count_summary": {
+      "total_files": 78,
+      "typescript_files": 52,
+      "test_files": 6,
+      "configuration_files": 6,
+      "html_files": 1,
+      "css_files": 2,
+      "javascript_files": 3,
+      "shell_scripts": 1,
+      "markdown_files": 1,
+      "json_files": 2,
+      "gitkeep_files": 22
+    },
+
+    "entity_to_schema_mapping": {
+      "ENT-001": "src/schemas/project.schema.ts",
+      "ENT-002": "src/schemas/prd.schema.ts",
+      "ENT-003": "src/schemas/specification.schema.ts",
+      "ENT-004": "src/schemas/implementation-plan.schema.ts",
+      "ENT-005": "src/schemas/task.schema.ts",
+      "ENT-006": "src/schemas/adr.schema.ts",
+      "ENT-007": "src/schemas/shift-report.schema.ts",
+      "ENT-008": "src/schemas/shift-handoff.schema.ts",
+      "ENT-009": "src/schemas/telemetry.schema.ts",
+      "ENT-010": "src/schemas/compiler-error.schema.ts",
+      "ENT-011": "src/schemas/status-fragment.schema.ts"
+    },
+
+    "feature_to_service_mapping": {
+      "FR-001": "src/services/distiller/",
+      "FR-002": "src/services/shift-manager/",
+      "FR-003": "src/services/worker/",
+      "FR-004": "src/services/guardrail/",
+      "FR-005": "src/services/orchestrator/ + scripts/orchestrate.sh",
+      "FR-006": "src/state/",
+      "FR-007": "public/",
+      "FR-008": "src/watcher/",
+      "FR-009": "public/js/crisis-mode.js",
+      "FR-010": "src/commands/",
+      "FR-011": "src/services/shift-manager/shift-handoff-writer.ts",
+      "FR-012": "src/services/shift-manager/ (recovery analysis)",
+      "FR-013": "src/services/shift-manager/ (final handoff)"
+    }
+  }
+}

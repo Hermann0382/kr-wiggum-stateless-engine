@@ -1,0 +1,165 @@
+{
+  "id": "FLOW-013",
+  "name": "WebSocket Bridge Data Flow",
+  "description": "Real-time bridge between CLI-based agents writing to disk and the HTML Dashboard displaying state using Socket.io.",
+  "feature_id": "FR-008",
+  "story_ids": ["ST-026", "ST-027", "ST-028"],
+  "actor": "system",
+  "trigger": "Watcher server starts OR file change detected",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "Watcher server starts and initializes Express.js",
+      "actor": "system",
+      "inputs": ["server_config"],
+      "outputs": ["express_server"],
+      "conditions": [],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Express serves static files from /public directory",
+      "actor": "system",
+      "inputs": ["public_directory"],
+      "outputs": ["static_file_server"],
+      "conditions": [],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Initialize Socket.io on Express server",
+      "actor": "system",
+      "inputs": ["express_server"],
+      "outputs": ["socket_io_instance"],
+      "conditions": [],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Set up fs.watch on .ralph/telemetry.json",
+      "actor": "system",
+      "inputs": ["telemetry_path"],
+      "outputs": ["telemetry_watcher"],
+      "conditions": [],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Set up fs.watchFile on IMPLEMENTATION_PLAN.md",
+      "actor": "system",
+      "inputs": ["roadmap_path"],
+      "outputs": ["roadmap_watcher"],
+      "conditions": [],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Telemetry file change detected",
+      "actor": "system",
+      "inputs": ["file_change_event"],
+      "outputs": ["change_notification"],
+      "conditions": [],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Parse telemetry.json content",
+      "actor": "system",
+      "inputs": ["file_content"],
+      "outputs": ["telemetry_data"],
+      "conditions": ["valid_json"],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Emit 'telemetry' event via Socket.io to all clients",
+      "actor": "system",
+      "inputs": ["telemetry_data"],
+      "outputs": ["socket_emit"],
+      "conditions": ["latency < 100ms"],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Roadmap file change detected",
+      "actor": "system",
+      "inputs": ["file_change_event"],
+      "outputs": ["roadmap_notification"],
+      "conditions": [],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Count [x] vs [ ] checkboxes in roadmap",
+      "actor": "system",
+      "inputs": ["roadmap_content"],
+      "outputs": ["completed_count", "total_count", "progress_percent"],
+      "conditions": [],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Emit 'roadmap' event via Socket.io with progress data",
+      "actor": "system",
+      "inputs": ["progress_data"],
+      "outputs": ["socket_emit"],
+      "conditions": [],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "Handle client connection/disconnection gracefully",
+      "actor": "system",
+      "inputs": ["socket_event"],
+      "outputs": ["connection_status"],
+      "conditions": [],
+      "next_steps": []
+    }
+  ],
+  "success_criteria": [
+    "fs.watch monitors .ralph/telemetry.json for changes",
+    "JSON parsed and 'telemetry' event emitted via Socket.io",
+    "Partial/empty file writes handled gracefully",
+    "Sub-100ms latency from file change to UI update",
+    "fs.watchFile monitors IMPLEMENTATION_PLAN.md",
+    "[x] vs [ ] checkboxes counted for progress",
+    "'roadmap' event emitted with progress percentage",
+    "Express serves /public directory",
+    "Dashboard accessible at http://localhost:3000",
+    "Multiple concurrent browser connections supported"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "Partial/empty file write",
+      "recovery_action": "Wait 50ms and retry parse",
+      "escalation": "Skip update and wait for next change"
+    },
+    {
+      "error_condition": "Invalid JSON in telemetry",
+      "recovery_action": "Use last valid state",
+      "escalation": "Log parse error for debugging"
+    },
+    {
+      "error_condition": "File watcher fails",
+      "recovery_action": "Re-initialize watcher",
+      "escalation": "Fall back to polling"
+    },
+    {
+      "error_condition": "Socket.io client disconnect",
+      "recovery_action": "Clean up client state",
+      "escalation": "Log disconnect for monitoring"
+    }
+  ]
+}

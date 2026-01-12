@@ -1,0 +1,178 @@
+{
+  "id": "FLOW-014",
+  "name": "Crisis Mode Activation",
+  "description": "Emergency override capability that immediately terminates all AI processes, reverts code to last commit, and clears telemetry state.",
+  "feature_id": "FR-009",
+  "story_ids": ["ST-029", "ST-030", "ST-031", "ST-032"],
+  "actor": "user",
+  "trigger": "User clicks Crisis Mode button on dashboard",
+  "steps": [
+    {
+      "id": "STEP-001",
+      "sequence": 1,
+      "action": "User clicks Crisis Mode button (red with neon-liquid warning glow)",
+      "actor": "user",
+      "inputs": ["button_click"],
+      "outputs": ["crisis_trigger"],
+      "conditions": ["no_confirmation_required"],
+      "next_steps": ["STEP-002"]
+    },
+    {
+      "id": "STEP-002",
+      "sequence": 2,
+      "action": "Dashboard provides immediate visual feedback on activation",
+      "actor": "system",
+      "inputs": ["crisis_trigger"],
+      "outputs": ["visual_feedback"],
+      "conditions": [],
+      "next_steps": ["STEP-003"]
+    },
+    {
+      "id": "STEP-003",
+      "sequence": 3,
+      "action": "Dashboard sends crisis signal to Watcher via WebSocket",
+      "actor": "system",
+      "inputs": ["crisis_signal"],
+      "outputs": ["server_notification"],
+      "conditions": [],
+      "next_steps": ["STEP-004"]
+    },
+    {
+      "id": "STEP-004",
+      "sequence": 4,
+      "action": "Watcher executes pkill -f orchestrate.sh",
+      "actor": "system",
+      "inputs": ["kill_command"],
+      "outputs": ["orchestrator_killed"],
+      "conditions": [],
+      "next_steps": ["STEP-005"]
+    },
+    {
+      "id": "STEP-005",
+      "sequence": 5,
+      "action": "Watcher executes pkill -f claude-code",
+      "actor": "system",
+      "inputs": ["kill_command"],
+      "outputs": ["ai_processes_killed"],
+      "conditions": ["termination < 2s"],
+      "next_steps": ["STEP-006"]
+    },
+    {
+      "id": "STEP-006",
+      "sequence": 6,
+      "action": "Log all terminations for debugging",
+      "actor": "system",
+      "inputs": ["termination_results"],
+      "outputs": ["crisis_log"],
+      "conditions": [],
+      "next_steps": ["STEP-007"]
+    },
+    {
+      "id": "STEP-007",
+      "sequence": 7,
+      "action": "Execute git reset --hard HEAD",
+      "actor": "system",
+      "inputs": ["git_command"],
+      "outputs": ["code_reverted"],
+      "conditions": [],
+      "next_steps": ["STEP-008"]
+    },
+    {
+      "id": "STEP-008",
+      "sequence": 8,
+      "action": "Clear any uncommitted changes from working directory",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["clean_working_directory"],
+      "conditions": [],
+      "next_steps": ["STEP-009"]
+    },
+    {
+      "id": "STEP-009",
+      "sequence": 9,
+      "action": "Preserve git history for forensic analysis",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["history_preserved"],
+      "conditions": [],
+      "next_steps": ["STEP-010"]
+    },
+    {
+      "id": "STEP-010",
+      "sequence": 10,
+      "action": "Reset telemetry.json to 0% context for all agents",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["telemetry_reset"],
+      "conditions": [],
+      "next_steps": ["STEP-011"]
+    },
+    {
+      "id": "STEP-011",
+      "sequence": 11,
+      "action": "Dashboard bars return to zero state",
+      "actor": "system",
+      "inputs": ["telemetry_reset"],
+      "outputs": ["ui_reset"],
+      "conditions": [],
+      "next_steps": ["STEP-012"]
+    },
+    {
+      "id": "STEP-012",
+      "sequence": 12,
+      "action": "Broadcast system message to all connected clients",
+      "actor": "system",
+      "inputs": ["crisis_complete"],
+      "outputs": ["broadcast_message"],
+      "conditions": [],
+      "next_steps": ["STEP-013"]
+    },
+    {
+      "id": "STEP-013",
+      "sequence": 13,
+      "action": "Confirm revert success and ready-for-restart state to frontend",
+      "actor": "system",
+      "inputs": [],
+      "outputs": ["confirmation"],
+      "conditions": [],
+      "next_steps": []
+    }
+  ],
+  "success_criteria": [
+    "Red button with neon-liquid warning glow visible",
+    "Single click triggers crisis protocol (no confirmation)",
+    "Visual feedback on activation",
+    "pkill -f orchestrate.sh executed",
+    "pkill -f claude-code executed",
+    "Termination within 2 seconds of button click",
+    "git reset --hard HEAD executed",
+    "Uncommitted changes cleared",
+    "Git history preserved for forensics",
+    "telemetry.json reset to 0% context",
+    "Dashboard bars return to zero",
+    "System message broadcasted to all connected clients",
+    "Ready for immediate loop restart"
+  ],
+  "error_handling": [
+    {
+      "error_condition": "Process kill fails",
+      "recovery_action": "Retry with SIGKILL",
+      "escalation": "Report zombie processes to user"
+    },
+    {
+      "error_condition": "Git reset fails",
+      "recovery_action": "Force reset with git clean -fd",
+      "escalation": "Alert user to manual intervention needed"
+    },
+    {
+      "error_condition": "Telemetry file locked",
+      "recovery_action": "Force unlock and overwrite",
+      "escalation": "Delete and recreate file"
+    },
+    {
+      "error_condition": "WebSocket disconnected during crisis",
+      "recovery_action": "Execute crisis locally anyway",
+      "escalation": "User must verify manually"
+    }
+  ]
+}
