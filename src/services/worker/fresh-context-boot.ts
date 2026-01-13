@@ -2,8 +2,8 @@
  * Clean context initialization
  * Starts Worker with empty context, receives only PRD.md and current_task.md
  */
-import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 
 import type { AgentType } from '../../schemas/index.js';
 import { createTelemetryManager } from '../../state/index.js';

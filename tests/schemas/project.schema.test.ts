@@ -2,6 +2,7 @@
  * Tests for project schema (ENT-001)
  */
 import { describe, it, expect } from 'vitest';
+
 import {
   ProjectSchema,
   ProjectStatusSchema,

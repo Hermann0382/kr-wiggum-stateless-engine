@@ -2,9 +2,10 @@
  * Express application setup
  * Static file serving for /public, Socket.io integration
  */
-import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

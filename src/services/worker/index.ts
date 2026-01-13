@@ -5,6 +5,7 @@
 import { randomUUID } from 'node:crypto';
 
 import type { WorkerSession } from '../../types/index.js';
+
 import {
   bootFreshContext,
   WORKER_CONSTRAINTS,
@@ -19,13 +20,6 @@ import {
   type LoopResult,
 } from './ralph-wiggum-loop.js';
 import {
-  writeStatusFragment,
-  writeBlockedFragment,
-  readStatusFragment,
-  type StatusFragmentInput,
-  type FileChange,
-} from './status-fragment-writer.js';
-import {
   prepareForSelfDestruct,
   selfDestructSuccess,
   selfDestructFailure,
@@ -34,6 +28,13 @@ import {
   determineExitCode,
   getExitCodeDescription,
 } from './self-destruct.js';
+import {
+  writeStatusFragment,
+  writeBlockedFragment,
+  readStatusFragment,
+  type StatusFragmentInput,
+  type FileChange,
+} from './status-fragment-writer.js';
 
 // Re-export sub-modules
 export * from './fresh-context-boot.js';

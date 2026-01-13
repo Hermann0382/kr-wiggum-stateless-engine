@@ -2,9 +2,9 @@
  * Shift handoff document generation
  * Writes SHIFT_HANDOFF.md with Accomplishments, Delta, Blockers, last 5 ADRs
  */
+import { randomUUID } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
 
 import type { ShiftHandoff } from '../../schemas/index.js';
 import {

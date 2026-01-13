@@ -6,6 +6,7 @@ import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { ensureDirectory } from '../../state/index.js';
+
 import type { PatternAnalysisResult } from './pattern-analyzer.js';
 
 /**

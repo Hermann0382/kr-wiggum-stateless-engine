@@ -42,6 +42,7 @@ yarn-error.log*
 
 # Test artifacts
 .vitest/
+vitest.config.ts.timestamp-*
 
 # Lock files (use package-lock.json)
 yarn.lock

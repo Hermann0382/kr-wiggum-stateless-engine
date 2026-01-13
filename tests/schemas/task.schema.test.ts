@@ -2,6 +2,7 @@
  * Tests for task schema (ENT-005)
  */
 import { describe, it, expect } from 'vitest';
+
 import { TaskSchema, TaskStatusSchema, type Task } from '../../src/schemas/task.schema.js';
 
 describe('TaskSchema', () => {

@@ -2,10 +2,11 @@
  * Integration tests for guardrail service
  * Tests the full verification pipeline
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import {
   verifyCompilation,

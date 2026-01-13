@@ -3,6 +3,13 @@
  * Coordinates Manager and Worker lifecycle management
  */
 import { EXIT_CODES } from '../../types/index.js';
+
+import {
+  createErrorRecovery,
+  type ErrorRecovery,
+  type RecoveryAction,
+  sleep,
+} from './error-recovery.js';
 import {
   createManagerLifecycle,
   type ManagerLifecycle,
@@ -14,12 +21,6 @@ import {
   type WorkerSpawnConfig,
   type WorkerSpawnResult,
 } from './worker-spawner.js';
-import {
-  createErrorRecovery,
-  type ErrorRecovery,
-  type RecoveryAction,
-  sleep,
-} from './error-recovery.js';
 
 // Re-export sub-modules
 export * from './manager-lifecycle.js';

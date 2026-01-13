@@ -6,6 +6,12 @@ import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { ensureDirectory } from '../../state/index.js';
+
+import {
+  breakdownToAtomicTasks,
+  generateImplementationPlanMarkdown,
+  type BreakdownResult,
+} from './atomic-task-breakdown.js';
 import {
   parseBrainstorm,
   mergeVoiceSegments,
@@ -13,13 +19,8 @@ import {
   type BrainstormParseResult,
 } from './brainstorm-parser.js';
 import { analyzePatterns, type PatternAnalysisResult } from './pattern-analyzer.js';
-import { generatePRD, type PRDResult } from './prd-generator.js';
 import { generatePIN, createPRDEntry, type PINResult } from './pin-generator.js';
-import {
-  breakdownToAtomicTasks,
-  generateImplementationPlanMarkdown,
-  type BreakdownResult,
-} from './atomic-task-breakdown.js';
+import { generatePRD, type PRDResult } from './prd-generator.js';
 
 // Re-export all sub-modules
 export * from './brainstorm-parser.js';

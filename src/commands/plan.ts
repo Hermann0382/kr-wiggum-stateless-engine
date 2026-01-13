@@ -5,11 +5,11 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { analyzePatterns } from '../services/distiller/pattern-analyzer.js';
 import {
   createImplementationPlanManager,
   type ProgressSummary,
 } from '../state/index.js';
-import { analyzePatterns } from '../services/distiller/pattern-analyzer.js';
 
 /**
  * Plan command options

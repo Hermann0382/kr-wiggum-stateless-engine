@@ -2,8 +2,9 @@
  * Manager for .ralph/telemetry.json
  * Context fill calculation, zone detection (smart/degrading/dumb), atomic JSON updates
  */
-import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { join } from 'node:path';
+
 import { z } from 'zod';
 
 import {
@@ -13,8 +14,9 @@ import {
   type ContextZone,
   type GuardrailStatus,
 } from '../schemas/index.js';
-import { FileStateManager, type FileStateOptions } from './file-state-manager.js';
 import { ZONE_THRESHOLDS } from '../types/index.js';
+
+import { FileStateManager, type FileStateOptions } from './file-state-manager.js';
 
 const TELEMETRY_FILE = 'telemetry.json';
 const RALPH_DIR = '.ralph';

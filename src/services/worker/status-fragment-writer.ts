@@ -2,9 +2,9 @@
  * Status fragment generation
  * Documents what_fixed, what_changed, patterns_used (<500 tokens)
  */
+import { randomUUID } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
 
 import type { StatusFragment } from '../../schemas/index.js';
 import { ensureDirectory } from '../../state/index.js';

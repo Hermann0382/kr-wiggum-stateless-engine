@@ -5,11 +5,6 @@
 import { Server as HTTPServer } from 'node:http';
 
 import {
-  createTelemetryWatcher,
-  type TelemetryWatcher,
-  type TelemetryWatcherConfig,
-} from './telemetry-watcher.js';
-import {
   createRoadmapWatcher,
   type RoadmapWatcher,
   type RoadmapWatcherConfig,
@@ -19,6 +14,11 @@ import {
   type WatcherSocketServer,
   type SocketServerConfig,
 } from './socket-server.js';
+import {
+  createTelemetryWatcher,
+  type TelemetryWatcher,
+  type TelemetryWatcherConfig,
+} from './telemetry-watcher.js';
 
 // Re-export sub-modules
 export * from './telemetry-watcher.js';

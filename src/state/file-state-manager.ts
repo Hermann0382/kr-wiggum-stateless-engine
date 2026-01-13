@@ -2,10 +2,11 @@
  * Base class for file-based state operations
  * Provides atomic read/write with hash verification
  */
-import { readFile, writeFile, mkdir, access, watch } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { dirname, resolve } from 'node:path';
 import { constants, type FSWatcher } from 'node:fs';
+import { readFile, writeFile, mkdir, access, watch } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+
 import { z } from 'zod';
 
 export interface FileStateOptions {

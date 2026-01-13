@@ -2,12 +2,12 @@
  * /...digest command implementation
  * Handles unstructured input, proposes 5-10 atomic tasks
  */
-import { parseBrainstorm, type VoiceSegment } from '../services/distiller/brainstorm-parser.js';
 import {
   breakdownToAtomicTasks,
   TASK_CONSTRAINTS,
   type BreakdownResult,
 } from '../services/distiller/atomic-task-breakdown.js';
+import { parseBrainstorm, type VoiceSegment } from '../services/distiller/brainstorm-parser.js';
 
 /**
  * Digest command options

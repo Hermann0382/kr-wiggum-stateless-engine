@@ -2,11 +2,13 @@
  * Manager for .agent/project.json
  * CRUD operations for project state with ProjectSchema validation
  */
-import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { join } from 'node:path';
+
 import { z } from 'zod';
 
 import { ProjectSchema, type Project } from '../schemas/index.js';
+
 import { FileStateManager, type FileStateOptions } from './file-state-manager.js';
 
 const PROJECT_FILE = 'project.json';

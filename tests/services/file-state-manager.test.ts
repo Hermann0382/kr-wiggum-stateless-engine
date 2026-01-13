@@ -1,10 +1,11 @@
 /**
  * Tests for FileStateManager base class
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdir, rm, writeFile, readFile, unlink } from 'node:fs/promises';
-import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { z } from 'zod';
 
 import { FileStateManager, type FileStateOptions } from '../../src/state/file-state-manager.js';

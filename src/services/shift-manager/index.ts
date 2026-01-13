@@ -11,10 +11,11 @@ import {
   createImplementationPlanManager,
 } from '../../state/index.js';
 import { EXIT_CODES, type ManagerSession } from '../../types/index.js';
-import { createContextMonitor, type ContextMonitor, type ContextStatus } from './context-monitor.js';
-import { createTaskSelector, type TaskSelector, type TaskSelectionResult } from './task-selector.js';
-import { createShiftHandoffWriter, type ShiftHandoffWriter } from './shift-handoff-writer.js';
+
 import { createADRLogger, type ADRLogger } from './adr-logger.js';
+import { createContextMonitor, type ContextMonitor, type ContextStatus } from './context-monitor.js';
+import { createShiftHandoffWriter, type ShiftHandoffWriter } from './shift-handoff-writer.js';
+import { createTaskSelector, type TaskSelector, type TaskSelectionResult } from './task-selector.js';
 
 // Re-export sub-modules
 export * from './context-monitor.js';
@@ -278,7 +279,7 @@ export class ShiftManager {
   ): Promise<ShiftManagerResult> {
     await this.startSession();
 
-    // eslint-disable-next-line no-constant-condition
+     
     while (true) {
       // Check for rotation
       if (await this.needsRotation()) {

@@ -11,6 +11,7 @@ import type {
   TestCheckResult,
   KRStandardsCheckResult,
 } from '../../types/index.js';
+
 import {
   verifyCompilation,
   quickTypeCheck,
@@ -18,18 +19,18 @@ import {
   type CompilerVerifyOptions,
 } from './compiler-verifier.js';
 import {
-  runTestGate,
-  quickTest,
-  getTestSummary,
-  type TestGateOptions,
-} from './test-gate.js';
-import {
   checkKRStandards,
   quickKRCheck,
   getKRStandardsSummary,
   KR_RULES,
   type KRStandardsOptions,
 } from './kr-standards-checker.js';
+import {
+  runTestGate,
+  quickTest,
+  getTestSummary,
+  type TestGateOptions,
+} from './test-gate.js';
 
 // Re-export sub-modules
 export * from './compiler-verifier.js';

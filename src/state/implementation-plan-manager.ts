@@ -6,6 +6,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import type { Task, TaskStatus } from '../schemas/index.js';
+
 import { calculateHash, ensureDirectory } from './file-state-manager.js';
 
 const IMPLEMENTATION_PLAN_FILE = 'IMPLEMENTATION_PLAN.md';

@@ -2,6 +2,7 @@
  * Tests for telemetry schema (ENT-009)
  */
 import { describe, it, expect } from 'vitest';
+
 import {
   TelemetrySchema,
   ContextZoneSchema,
