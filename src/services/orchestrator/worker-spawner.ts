@@ -2,9 +2,10 @@
  * Worker process spawning
  * Spawns fresh Claude Code instance per task, kills after completion
  */
-import { spawn, type ChildProcess } from 'node:child_process';
+import { generateWorkerPrompt } from '../../prompts/index.js';
+import { type ProcessSpawnResult } from '../../types/index.js';
 
-import { EXIT_CODES, type ProcessSpawnResult, type ExitCode } from '../../types/index.js';
+import { spawnClaude, type ClaudeSpawnResult } from './claude-spawner.js';
 
 /**
  * Worker spawn configuration
@@ -28,7 +29,7 @@ export interface WorkerSpawnResult extends ProcessSpawnResult {
 }
 
 /**
- * Spawn a Worker process
+ * Spawn a Worker process using Claude Code CLI
  */
 export async function spawnWorker(config: WorkerSpawnConfig): Promise<WorkerSpawnResult> {
   const {
@@ -41,98 +42,45 @@ export async function spawnWorker(config: WorkerSpawnConfig): Promise<WorkerSpaw
     onOutput,
   } = config;
 
-  return new Promise((resolve) => {
-    const start = Date.now();
-    let stdout = '';
-    let stderr = '';
-
-    // Build environment
-    const env: Record<string, string> = {
-      ...process.env as Record<string, string>,
-      NODE_ENV: 'production',
-      WORKER_MODE: 'true',
-      TASK_ID: taskId,
-      PRD_PATH: prdPath,
-      CURRENT_TASK_PATH: currentTaskPath,
-    };
-
-    if (projectId !== undefined) {
-      env['PROJECT_ID'] = projectId;
-    }
-
-    // Spawn the Worker process
-    // In production, this would spawn Claude Code with worker prompt
-    // For now, we simulate with a Node.js script
-    const child = spawn('node', ['--experimental-specifier-resolution=node', 'dist/worker-entry.js'], {
-      cwd: basePath,
-      env,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-
-    // Set timeout
-    const timer = setTimeout(() => {
-      child.kill('SIGTERM');
-      resolve({
-        pid: child.pid ?? 0,
-        exitCode: EXIT_CODES.CRASH,
-        stdout,
-        stderr: stderr + '\nWorker timed out',
-        duration: Date.now() - start,
-        taskId,
-        success: false,
-      });
-    }, timeout);
-
-    // Capture output
-    child.stdout?.on('data', (data: Buffer) => {
-      const str = data.toString();
-      stdout += str;
-      onOutput?.(str);
-    });
-
-    child.stderr?.on('data', (data: Buffer) => {
-      const str = data.toString();
-      stderr += str;
-      onOutput?.(str);
-    });
-
-    // Handle exit
-    child.on('exit', (code) => {
-      clearTimeout(timer);
-      resolve({
-        pid: child.pid ?? 0,
-        exitCode: (code ?? EXIT_CODES.CRASH) as ExitCode,
-        stdout,
-        stderr,
-        duration: Date.now() - start,
-        taskId,
-        success: code === EXIT_CODES.SUCCESS,
-      });
-    });
-
-    // Handle errors
-    child.on('error', (error) => {
-      clearTimeout(timer);
-      resolve({
-        pid: child.pid ?? 0,
-        exitCode: EXIT_CODES.CRASH,
-        stdout,
-        stderr: stderr + '\n' + error.message,
-        duration: Date.now() - start,
-        taskId,
-        success: false,
-      });
-    });
+  // Generate the Worker prompt
+  const prompt = generateWorkerPrompt({
+    taskId,
+    prdPath,
+    taskPath: currentTaskPath,
+    basePath,
+    maxRetries: 5,
+    projectId,
   });
+
+  // Spawn Claude Code CLI with the prompt
+  const result: ClaudeSpawnResult = await spawnClaude({
+    prompt,
+    cwd: basePath,
+    timeout,
+    onOutput,
+    // Workers get full tool access for editing, building, testing
+    allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep'],
+  });
+
+  return {
+    pid: result.pid,
+    exitCode: result.exitCode,
+    stdout: result.stdout,
+    stderr: result.stderr,
+    duration: result.duration,
+    taskId,
+    success: result.success,
+  };
 }
 
 /**
  * Worker pool for managing multiple concurrent workers
+ * Note: With Claude CLI, workers are spawned as blocking processes
  */
 export class WorkerPool {
   private readonly basePath: string;
   private readonly maxConcurrent: number;
-  private activeWorkers: Map<string, ChildProcess> = new Map();
+  private activeCount: number = 0;
   private completedTasks: WorkerSpawnResult[] = [];
 
   constructor(basePath: string, maxConcurrent: number = 1) {
@@ -144,24 +92,29 @@ export class WorkerPool {
    * Spawn a worker for a task
    */
   async spawnForTask(config: Omit<WorkerSpawnConfig, 'basePath'>): Promise<WorkerSpawnResult> {
-    if (this.activeWorkers.size >= this.maxConcurrent) {
+    if (this.activeCount >= this.maxConcurrent) {
       throw new Error(`Max concurrent workers (${this.maxConcurrent}) reached`);
     }
 
-    const result = await spawnWorker({
-      basePath: this.basePath,
-      ...config,
-    });
+    this.activeCount++;
+    try {
+      const result = await spawnWorker({
+        basePath: this.basePath,
+        ...config,
+      });
 
-    this.completedTasks.push(result);
-    return result;
+      this.completedTasks.push(result);
+      return result;
+    } finally {
+      this.activeCount--;
+    }
   }
 
   /**
    * Get active worker count
    */
   getActiveCount(): number {
-    return this.activeWorkers.size;
+    return this.activeCount;
   }
 
   /**
@@ -169,16 +122,6 @@ export class WorkerPool {
    */
   getCompletedTasks(): WorkerSpawnResult[] {
     return [...this.completedTasks];
-  }
-
-  /**
-   * Kill all active workers
-   */
-  killAll(): void {
-    for (const [taskId, process] of this.activeWorkers) {
-      process.kill('SIGTERM');
-    }
-    this.activeWorkers.clear();
   }
 
   /**

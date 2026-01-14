@@ -2,10 +2,10 @@
  * Manager process management
  * Launches Manager with HANDOFF_FILE, monitors exit codes
  */
-import { spawn, type ChildProcess } from 'node:child_process';
-import { join } from 'node:path';
+import { generateManagerPrompt } from '../../prompts/index.js';
+import { EXIT_CODES, type ProcessSpawnResult } from '../../types/index.js';
 
-import { EXIT_CODES, type ProcessSpawnResult, type ExitCode } from '../../types/index.js';
+import { spawnClaude, type ClaudeSpawnResult } from './claude-spawner.js';
 
 /**
  * Manager spawn configuration
@@ -30,7 +30,7 @@ export interface ManagerLifecycleState {
 }
 
 /**
- * Spawn a Manager process
+ * Spawn a Manager process using Claude Code CLI
  */
 export async function spawnManager(config: ManagerSpawnConfig): Promise<ProcessSpawnResult> {
   const {
@@ -41,87 +41,37 @@ export async function spawnManager(config: ManagerSpawnConfig): Promise<ProcessS
     onOutput,
   } = config;
 
-  return new Promise((resolve) => {
-    const start = Date.now();
-    let stdout = '';
-    let stderr = '';
-
-    // Build environment
-    const env: Record<string, string> = {
-      ...process.env as Record<string, string>,
-      NODE_ENV: 'production',
-      MANAGER_MODE: 'true',
-    };
-
-    if (handoffFile !== undefined) {
-      env['HANDOFF_FILE'] = handoffFile;
-    }
-    if (projectId !== undefined) {
-      env['PROJECT_ID'] = projectId;
-    }
-
-    // Spawn the Manager process
-    // In production, this would spawn Claude Code with manager prompt
-    // For now, we simulate with a Node.js script
-    const child = spawn('node', ['--experimental-specifier-resolution=node', 'dist/manager-entry.js'], {
-      cwd: basePath,
-      env,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-
-    // Set timeout
-    const timer = setTimeout(() => {
-      child.kill('SIGTERM');
-      resolve({
-        pid: child.pid ?? 0,
-        exitCode: EXIT_CODES.CRASH,
-        stdout,
-        stderr: stderr + '\nProcess timed out',
-        duration: Date.now() - start,
-      });
-    }, timeout);
-
-    // Capture output
-    child.stdout?.on('data', (data: Buffer) => {
-      const str = data.toString();
-      stdout += str;
-      onOutput?.(str);
-    });
-
-    child.stderr?.on('data', (data: Buffer) => {
-      const str = data.toString();
-      stderr += str;
-      onOutput?.(str);
-    });
-
-    // Handle exit
-    child.on('exit', (code) => {
-      clearTimeout(timer);
-      resolve({
-        pid: child.pid ?? 0,
-        exitCode: (code ?? EXIT_CODES.CRASH) as ExitCode,
-        stdout,
-        stderr,
-        duration: Date.now() - start,
-      });
-    });
-
-    // Handle errors
-    child.on('error', (error) => {
-      clearTimeout(timer);
-      resolve({
-        pid: child.pid ?? 0,
-        exitCode: EXIT_CODES.CRASH,
-        stdout,
-        stderr: stderr + '\n' + error.message,
-        duration: Date.now() - start,
-      });
-    });
+  // Generate the Manager prompt
+  const prompt = generateManagerPrompt({
+    basePath,
+    handoffPath: handoffFile,
+    projectId,
+    implementationPlanPath: 'IMPLEMENTATION_PLAN.md',
+    maxTasksBeforeRotation: 5,
   });
+
+  // Spawn Claude Code CLI with the prompt
+  const result: ClaudeSpawnResult = await spawnClaude({
+    prompt,
+    cwd: basePath,
+    timeout,
+    onOutput,
+    // Managers get full tool access for reading, editing, and spawning workers
+    allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep'],
+  });
+
+  return {
+    pid: result.pid,
+    exitCode: result.exitCode,
+    stdout: result.stdout,
+    stderr: result.stderr,
+    duration: result.duration,
+  };
 }
 
 /**
  * Manager lifecycle controller
+ * Note: With Claude CLI, managers run as blocking processes
  */
 export class ManagerLifecycle {
   private readonly basePath: string;
@@ -132,7 +82,6 @@ export class ManagerLifecycle {
     isRunning: false,
     rotationCount: 0,
   };
-  private currentProcess: ChildProcess | null = null;
 
   constructor(basePath: string) {
     this.basePath = basePath;
@@ -167,13 +116,10 @@ export class ManagerLifecycle {
   }
 
   /**
-   * Stop the Manager
+   * Stop the Manager (marks as not running)
+   * Note: Claude CLI processes are blocking, so this just updates state
    */
   stop(): void {
-    if (this.currentProcess !== null) {
-      this.currentProcess.kill('SIGTERM');
-      this.currentProcess = null;
-    }
     this.state.isRunning = false;
   }
 

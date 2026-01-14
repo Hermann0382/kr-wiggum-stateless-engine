@@ -26,6 +26,8 @@ import {
 export * from './manager-lifecycle.js';
 export * from './worker-spawner.js';
 export * from './error-recovery.js';
+export * from './claude-spawner.js';
+export * from './cli-detector.js';
 
 /**
  * Orchestrator configuration
@@ -230,11 +232,11 @@ export class Orchestrator {
 
   /**
    * Stop the orchestrator
+   * Note: With Claude CLI, running processes are blocking, so this just updates state
    */
   stop(): void {
     this.state.isRunning = false;
     this.managerLifecycle.stop();
-    this.workerPool.killAll();
   }
 
   /**
