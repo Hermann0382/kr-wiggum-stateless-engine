@@ -114,32 +114,74 @@ handle_manager_exit() {
 # Run Manager process
 run_manager() {
     local handoff_file=""
+    local handoff_context=""
 
     if [ $manager_rotations -gt 0 ]; then
         handoff_file="$PROJECT_PATH/.agent/SHIFT_HANDOFF.md"
         log_manager "Starting Manager rotation #$manager_rotations with handoff"
+        if [ -f "$handoff_file" ]; then
+            handoff_context="Read the handoff from previous Manager at: $handoff_file"
+        fi
     else
         log_manager "Starting initial Manager"
+        handoff_context="This is a fresh start - no previous context."
     fi
 
-    # Export environment
-    export NODE_ENV=production
-    export MANAGER_MODE=true
-    export PROJECT_PATH="$PROJECT_PATH"
-
-    if [ -n "$handoff_file" ]; then
-        export HANDOFF_FILE="$handoff_file"
-    fi
-
-    # Run the Manager
-    # In production, this would invoke Claude Code
-    # For now, run the TypeScript entry point
     cd "$PROJECT_PATH"
 
-    local exit_code=0
-    node --experimental-specifier-resolution=node dist/manager-entry.js || exit_code=$?
+    # Check if Claude CLI is available
+    if command -v claude &> /dev/null; then
+        # Use Claude Code CLI
+        log_info "Spawning Claude Code CLI as Manager..."
 
-    return $exit_code
+        local prompt="# Shift Manager - Task Orchestration
+
+You are a Manager agent in the Ralph Wiggum orchestration system.
+
+## Working Directory
+$PROJECT_PATH
+
+## Context
+$handoff_context
+
+## Your Mission
+1. Read IMPLEMENTATION_PLAN.md to see all tasks
+2. Find the first unchecked task (marked [ ])
+3. Implement that task:
+   - Read the task requirements
+   - Edit the necessary files
+   - Run npm run build to check TypeScript
+   - Run npm test to verify
+4. Mark the task complete (change [ ] to [x])
+5. Repeat until all tasks are done OR you've completed 5 tasks
+
+## Exit Codes
+- Run 'exit 0' when ALL tasks in IMPLEMENTATION_PLAN.md are complete
+- Run 'exit 10' after completing ~5 tasks (rotation needed)
+- Run 'exit 20' if you encounter a blocking issue requiring human help
+
+## Start Now
+Read IMPLEMENTATION_PLAN.md and begin working on the first unchecked task."
+
+        local exit_code=0
+        claude --print "$prompt" || exit_code=$?
+        return $exit_code
+    else
+        # Fallback to Node.js entry point
+        log_warning "Claude CLI not found, using Node.js fallback"
+
+        export NODE_ENV=production
+        export MANAGER_MODE=true
+        export PROJECT_PATH="$PROJECT_PATH"
+
+        if [ -n "$handoff_file" ]; then
+            export HANDOFF_FILE="$handoff_file"
+        fi
+
+        local exit_code=0
+        node --experimental-specifier-resolution=node dist/manager-entry.js || exit_code=$?
+        return $exit_code
+    fi
 }
 
 # Main orchestration loop

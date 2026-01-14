@@ -7,7 +7,8 @@
   "bin": {
     "kr-manager": "./dist/manager-entry.js",
     "kr-worker": "./dist/worker-entry.js",
-    "kr-wiggum": "./dist/server.js"
+    "kr-wiggum": "./dist/cli.js",
+    "kr-wiggum-server": "./dist/server.js"
   },
   "engines": {
     "node": ">=20.0.0"
